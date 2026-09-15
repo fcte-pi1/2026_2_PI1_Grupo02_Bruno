@@ -35,14 +35,14 @@ A prioridade de cada item é definida pela classificação MoSCoW:
 
 | **ID** | **Nome do Requisito** | **Descrição** | **Prioridade** | **Responsáveis** | **Link Github Projects** |
 |:------:|------------------------|---------------|:--------------:|------------------|--------------------------|
-|  **RF5**  | Reconhecimento Espacial e Detecção de Obstáculos | O sistema deve realizar a amostragem contínua do ambiente por meio de sensores de proximidade para identificar a presença de paredes (5 cm de altura) e aberturas nas direções frontal, laterais e diagonais. | Must have | - | - |
-|  **RF6**  |Processamento Embarcado Autônomo  | O sistema deve utilizar unidade microcontrolada para executar localmente a leitura de sensores, a lógica de controle e o armazenamento do mapa em memória, sem dependência de processamento externo. |Must have  | - | - |
-|  **RF7**  | Acionamento e Modulação de Potência Motriz|O sistema deve conter driver de potência para converter comandos lógicos em acionamento elétrico reversível com modulação contínua de velocidade (PWM) para os motores de tração.  | Must have | - | - |
-|  **RF8**  | Manutenção de Trajetória Centralizada | O sistema de atuação deve ajustar o movimento diferencial do robô para manter a trajetória reta e centralizada entre as paredes dos corredores do labirinto.| Must have | - | - |
-|  **RF9**  |Execução de Curvas e Manobras de Rotação  | O sistema de tração diferencial deve permitir a execução precisa de giros de 90° e 180° sobre o próprio eixo do robô, compatíveis com as células de 18 cm × 18 cm do labirinto. | Must have | - | - |
-|  **RF10**  |Transmissão Sem Fio de Telemetria | O sistema deve disponibilizar canal de comunicação sem fio para enviar pacotes de dados da corrida em tempo real para a aplicação web. | Must have | - | - |
-|  **RF11**  | Regulação e Distribuição de Energia | O sistema deve receber a alimentação da fonte recarregável e distribuir tensões reguladas e estáveis para a eletrônica de controle, sensores e atuadores. | Must have | - | - |
-|  **RF12**  | Interface Física de Operação e Disparo | O sistema deve conter chave ou botão físico acessível externamente no chassi para comando manual de início e interrupção da navegação. | Must have | - | - |
+|  **RF5**  | Reconhecimento Espacial e Detecção de Obstáculos | O sistema deve realizar a amostragem contínua do ambiente por meio de sensores de proximidade para identificar a presença de paredes (5 cm de altura) e aberturas nas direções frontal, laterais e diagonais. | Must have | Maria Laura | [#53](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/53) |
+|  **RF6**  |Processamento Embarcado Autônomo  | O sistema deve utilizar unidade microcontrolada para executar localmente a leitura de sensores, a lógica de controle e o armazenamento do mapa em memória, sem dependência de processamento externo. |Must have  | Vinícius Araújo Oliveira | [#54](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/54) |
+|  **RF7**  | Acionamento e Modulação de Potência Motriz|O sistema deve conter driver de potência para converter comandos lógicos em acionamento elétrico reversível com modulação contínua de velocidade (PWM) para os motores de tração.  | Must have | Maria Laura | [#55](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/55) |
+|  **RF8**  | Manutenção de Trajetória Centralizada | O sistema de atuação deve ajustar o movimento diferencial do robô para manter a trajetória reta e centralizada entre as paredes dos corredores do labirinto.| Must have | Vinícius Araújo Oliveira | [#56](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/56) |
+|  **RF9**  |Execução de Curvas e Manobras de Rotação  | O sistema de tração diferencial deve permitir a execução precisa de giros de 90° e 180° sobre o próprio eixo do robô, compatíveis com as células de 18 cm × 18 cm do labirinto. | Must have | Maria Laura | [#57](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/57) |
+|  **RF10**  |Transmissão Sem Fio de Telemetria | O sistema deve disponibilizar canal de comunicação sem fio para enviar pacotes de dados da corrida em tempo real para a aplicação web. | Must have | Vinícius Araújo Oliveira | [#58](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/58) |
+|  **RF11**  | Regulação e Distribuição de Energia | O sistema deve receber a alimentação da fonte recarregável e distribuir tensões reguladas e estáveis para a eletrônica de controle, sensores e atuadores. | Must have | Maria Laura | [#59](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/59) |
+|  **RF12**  | Interface Física de Operação e Disparo | O sistema deve conter chave ou botão físico acessível externamente no chassi para comando manual de início e interrupção da navegação. | Must have | Vinícius Araújo Oliveira | [#60](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/60) |
 
 **Estruturas**
 
@@ -104,11 +104,11 @@ A prioridade de cada item é definida pela classificação MoSCoW:
 
 | **ID** | **Nome do Requisito** | **Descrição** | **Prioridade** | **Responsáveis** | **Link Github Projects** |
 |:------:|------------------------|---------------|:--------------:|------------------|--------------------------|
-| **RNF10** | Limite Dimensional e Geométrico | O robô montado não deve exceder as dimensões máximas de **16,5 cm de largura por 16,5 cm de comprimento** em qualquer estado operacional. | Must have | - | - |
-| **RNF11** | Autonomia de Alimentação | A bateria deve fornecer autonomia para no mínimo **30 minutos** de operação contínua (ou 3 corridas completas) sem recarga. | Must  have | - | - |
-| **RNF12** | Proteção e Margem de Segurança Elétrica | O circuito deve possuir proteção contra inversão de polaridade e condutores dimensionados com no mínimo **30% de margem** sobre a corrente de pico. | Must have | - | - |
-| **RNF13** | Estabilidade de Tensão Lógica | O circuito de regulação deve manter flutuação máxima de **±5%** nas linhas lógicas (3,3V e 5V) durante a partida dos motores. | Must have | - | - |
-| **RNF14** | Latência da Malha Física de Resposta | O tempo decorrido entre a leitura dos sensores de proximidade e o acionamento efetivo dos motores deve ser de no máximo **50 ms**. | Must have | - | - |
+| **RNF10** | Limite Dimensional e Geométrico | O robô montado não deve exceder as dimensões máximas de **16,5 cm de largura por 16,5 cm de comprimento** em qualquer estado operacional. | Must have | Maria Laura | [#61](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/61) |
+| **RNF11** | Autonomia de Alimentação | A bateria deve fornecer autonomia para no mínimo **30 minutos** de operação contínua (ou 3 corridas completas) sem recarga. | Must  have | Vinícius Araújo Oliveira | [#62](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/62) |
+| **RNF12** | Proteção e Margem de Segurança Elétrica | O circuito deve possuir proteção contra inversão de polaridade e condutores dimensionados com no mínimo **30% de margem** sobre a corrente de pico. | Must have | Maria Laura | [#63](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/63) |
+| **RNF13** | Estabilidade de Tensão Lógica | O circuito de regulação deve manter flutuação máxima de **±5%** nas linhas lógicas (3,3V e 5V) durante a partida dos motores. | Must have | Vinícius Araújo Oliveira | [#65](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/65) |
+| **RNF14** | Latência da Malha Física de Resposta | O tempo decorrido entre a leitura dos sensores de proximidade e o acionamento efetivo dos motores deve ser de no máximo **50 ms**. | Must have | Maria Laura | [#70](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/70) |
 
 
 
