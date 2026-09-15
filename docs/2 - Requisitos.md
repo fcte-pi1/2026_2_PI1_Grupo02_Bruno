@@ -26,10 +26,10 @@ A prioridade de cada item é definida pela classificação MoSCoW:
 
 | **ID** | **Nome do Requisito** | **Descrição** | **Prioridade** | **Responsáveis** | **Link Github Projects** |
 |:------:|------------------------|---------------|:--------------:|------------------|--------------------------|
-| RF1 | Telemetria energética em tempo real | Durante cada percurso, o sistema deve exibir no sistema web o consumo de bateria em tempo real e associá-lo à execução realizada. | Must | - | - |
-| RF2 | Isolamento manual da alimentação | O circuito de alimentação deve incluir uma chave física de fácil acesso que desconecte a bateria dos subsistemas do robô, permitindo desligamento seguro durante transporte, montagem e manutenção. | Must | - | - |
-| RF3 | Aviso web de bateria baixa | O firmware deve acompanhar periodicamente a tensão da bateria e, ao identificar nível crítico, emitir um aviso no sistema web durante a execução. | Must | - | - |
-| RF4 | Bateria removível e reinstalável | A bateria deve poder ser removida e recolocada no micromouse de forma simples, sem exigir a desmontagem completa do chassi. | Could | - | - |
+| RF1 | Telemetria energética em tempo real | Durante cada percurso, o sistema deve exibir no sistema web o consumo de bateria em tempo real e associá-lo à execução realizada. | Must | Gabriel Andrade Magioli | [#1](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/1) |
+| RF2 | Isolamento manual da alimentação | O circuito de alimentação deve incluir uma chave física de fácil acesso que desconecte a bateria dos subsistemas do robô, permitindo desligamento seguro durante transporte, montagem e manutenção. | Must | Rafael Silva Wasconcelos | [#2](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/2) |
+| RF3 | Aviso web de bateria baixa | O firmware deve acompanhar periodicamente a tensão da bateria e, ao identificar nível crítico, emitir um aviso no sistema web durante a execução. | Must | Pedro Gustavo Nunes Silva | [#3](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/3) |
+| RF4 | Bateria removível e reinstalável | A bateria deve poder ser removida e recolocada no micromouse de forma simples, sem exigir a desmontagem completa do chassi. | Could | Gabriel Andrade Magioli | [#4](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/4) |
 
 **Hardware**
 
@@ -92,15 +92,15 @@ A prioridade de cada item é definida pela classificação MoSCoW:
 
 | **ID** | **Nome do Requisito** | **Descrição** | **Prioridade** | **Responsáveis** | **Link Github Projects** |
 |:------:|------------------------|---------------|:--------------:|------------------|--------------------------|
-| RNF1 | Autonomia operacional | Com sensores, controle, motores e telemetria ativos no perfil normal de corrida, o Rato Cego deve funcionar continuamente por pelo menos 30 minutos sem recarga ou troca de bateria. | Must | - | - |
-| RNF2 | Rendimento da conversão de energia | Os conversores e reguladores de tensão devem apresentar eficiência igual ou superior a 85% na faixa nominal de carga dos subsistemas que alimentam. | Should | - | - |
-| RNF3 | Consumo em inatividade | Quando o robô estiver ligado e sem executar uma corrida, a corrente total do sistema deve permanecer em até 50 mA, desativando periféricos que não sejam necessários. | Should | - | - |
-| RNF4 | Aviso preventivo de descarga | O sistema deve reconhecer a condição de baixa carga e gerar alerta quando qualquer célula atingir 3,3 V, antes de alcançar uma faixa que possa comprometer sua vida útil. | Must | - | - |
-| RNF5 | Restrição de massa do conjunto energético | Bateria, circuito de recarga, reguladores, proteções e cabeamento de alimentação não podem, em conjunto, ultrapassar 25% da massa final do micromouse. | Must | - | - |
-| RNF6 | Integridade da alimentação dos sensores | Sob aceleração e partida dos motores, a tensão fornecida aos sensores deve se manter entre 95% e 105% de seu valor nominal. | Must | - | - |
-| RNF7 | Proteção contra falhas elétricas | O sistema de alimentação deve interromper ou limitar a corrente em situações de sobrecorrente ou curto-circuito, protegendo a bateria e os circuitos eletrônicos. | Must | - | - |
-| RNF8 | Confiabilidade da telemetria energética | Após a calibração, as leituras de tensão e consumo registradas pelo robô devem apresentar erro máximo de 5% em relação ao instrumento de referência. | Should | - | - |
-| RNF9 | Compatibilidade de tensão dos subsistemas | A tensão nominal e a faixa de descarga da bateria devem ser compatíveis com todos os subsistemas, utilizando BECs devidamente dimensionados para fornecer a tensão e a corrente requeridas por cada subsistema. | Must | - | - |
+| RNF1 | Autonomia operacional | Com sensores, controle, motores e telemetria ativos no perfil normal de corrida, o Rato Cego deve funcionar continuamente por pelo menos 30 minutos sem recarga ou troca de bateria. | Must | Rafael Silva Wasconcelos | [#5](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/5) |
+| RNF2 | Rendimento da conversão de energia | Os conversores e reguladores de tensão devem apresentar eficiência igual ou superior a 85% na faixa nominal de carga dos subsistemas que alimentam. | Should | Pedro Gustavo Nunes Silva | [#6](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/6) |
+| RNF3 | Consumo em inatividade | Quando o robô estiver ligado e sem executar uma corrida, a corrente total do sistema deve permanecer em até 50 mA, desativando periféricos que não sejam necessários. | Should | Gabriel Andrade Magioli | [#7](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/7) |
+| RNF4 | Aviso preventivo de descarga | O sistema deve reconhecer a condição de baixa carga e gerar alerta quando qualquer célula atingir 3,3 V, antes de alcançar uma faixa que possa comprometer sua vida útil. | Must | Rafael Silva Wasconcelos | [#8](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/8) |
+| RNF5 | Restrição de massa do conjunto energético | Bateria, circuito de recarga, reguladores, proteções e cabeamento de alimentação não podem, em conjunto, ultrapassar 25% da massa final do micromouse. | Must | Pedro Gustavo Nunes Silva | [#9](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/9) |
+| RNF6 | Integridade da alimentação dos sensores | Sob aceleração e partida dos motores, a tensão fornecida aos sensores deve se manter entre 95% e 105% de seu valor nominal. | Must | Gabriel Andrade Magioli | [#10](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/10) |
+| RNF7 | Proteção contra falhas elétricas | O sistema de alimentação deve interromper ou limitar a corrente em situações de sobrecorrente ou curto-circuito, protegendo a bateria e os circuitos eletrônicos. | Must | Rafael Silva Wasconcelos | [#11](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/11) |
+| RNF8 | Confiabilidade da telemetria energética | Após a calibração, as leituras de tensão e consumo registradas pelo robô devem apresentar erro máximo de 5% em relação ao instrumento de referência. | Should | Gabriel Andrade Magioli | [#13](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/13) |
+| RNF9 | Compatibilidade de tensão dos subsistemas | A tensão nominal e a faixa de descarga da bateria devem ser compatíveis com todos os subsistemas, utilizando BECs devidamente dimensionados para fornecer a tensão e a corrente requeridas por cada subsistema. | Must | Pedro Gustavo Nunes Silva | [#15](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/15) |
 
 **Hardware**
 
