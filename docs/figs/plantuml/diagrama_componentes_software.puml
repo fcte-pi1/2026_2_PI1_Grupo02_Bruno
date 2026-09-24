@@ -1,0 +1,66 @@
+@startuml
+!pragma layout smetana
+title Diagrama de componentes da solução de software
+left to right direction
+skinparam componentStyle uml2
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam package {
+  BackgroundColor #F8FAFC
+  BorderColor #64748B
+  FontColor #0F172A
+}
+skinparam component {
+  BackgroundColor #F5F7FF
+  BorderColor #4054A5
+  FontColor #172554
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #475569
+  FontColor #334155
+}
+skinparam ArrowColor #475569
+skinparam ArrowFontColor #334155
+
+component "Robô Rato Cego\nSistema embarcado" as robot
+component "Eclipse Mosquitto\nBroker MQTT em Docker" as broker
+
+package "Aplicação de software local" as app {
+  package "Backend monolítico — Spring Boot" as backend {
+    component "RunController\nAPI REST" as rest
+    component "RunService\nExecução e histórico" as runservice
+    component "TelemetryService\nProcessamento de telemetria" as telemetry
+    component "TelemetryMqttListener\nAdaptador MQTT de entrada" as mqttlistener
+    component "MqttRunCommandAdapter\nPublicador MQTT" as commandadapter
+    component "WebSocketTelemetryAdapter\nPublicador WebSocket" as wsadapter
+    component "Adaptadores de persistência" as persistence
+
+    interface "RunCommandPublisher" as commandport
+    interface "TelemetryPublisher" as telemetryport
+    interface "RunRepository / MazeRepository" as repositoryport
+  }
+  component "Frontend React\nNavegador do usuário" as frontend
+  database "Banco de dados\nTecnologia a definir" as database
+}
+
+frontend --> rest : REST
+rest ..> runservice
+runservice ..> commandport
+commandadapter ..|> commandport
+commandadapter --> broker : MQTT
+broker <--> robot : MQTT
+broker --> mqttlistener
+mqttlistener --> runservice
+mqttlistener --> telemetry
+runservice ..> repositoryport
+telemetry ..> repositoryport
+persistence ..|> repositoryport
+persistence --> database
+runservice ..> telemetryport
+telemetry ..> telemetryport
+wsadapter ..|> telemetryport
+wsadapter --> frontend : WebSocket
+
+@enduml
