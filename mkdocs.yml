@@ -23,22 +23,22 @@ nav:
       - EAP: EAP.md
 
   - Solução:
-      - Estrutura: Estrutura.md
-      - Energia: Energia.md
-      - Hardware: Hardware.md
-      - Software: Software.md
+      - Estrutura: Projeto conceitual de estruturas.md
+      - Energia: Projeto conceitual de energia.md
+      - Hardware: Projeto conceitual de hardware.md
+      - Software: Projeto conceitual de software.md
 
   - Planejamento:
       - Cronograma: Cronograma.md
       - Orçamento: Orçamento.md
 
   - Validação:
-      - Testes de estrutura: Testes-de-estrutura.md
-      - Testes de energia: Testes-de-energia.md
-      - Testes de hardware: Testes-de-hardware.md
-      - Testes de software: Testes-de-software.md
-      - Testes de integração: Testes-de-integracao.md
-      - Avaliação de desempenho: Avaliacao-de-desempenho.md
+      - Testes de estrutura: Testes de estrutura.md
+      - Testes de energia: Testes de energia.md
+      - Testes de hardware: Testes de hardware.md
+      - Testes de software: Testes de software.md
+      - Testes de integração: Testes de integração.md
+      - Avaliação de desempenho: Avaliação de desempenho.md
 
   - Entregas:
-      - Relatório final: Relatorio-de-encerramento-do-projeto.md
+      - Relatório final: Relatório de encerramento do projeto.md
