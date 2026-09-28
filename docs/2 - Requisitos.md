@@ -1,150 +1,245 @@
 # Requisitos
 
-> Documento que descreve as funcionalidades, restrições e critérios técnicos que orientam o desenvolvimento e a validação do micromouse Rato Cego.
-
-## Visão Geral dos Requisitos
-
 Este documento consolida os requisitos do projeto Rato Cego, um robô móvel autônomo capaz de mapear e solucionar labirintos. Os requisitos orientam as decisões das equipes de Hardware, Estruturas, Energia e Software, assegurando que os subsistemas sejam desenvolvidos de forma integrada e atendam aos objetivos definidos no Termo de Abertura do Projeto.
 
-Cada requisito possui um identificador único, uma descrição objetiva, uma prioridade e os campos destinados à definição dos responsáveis e ao acompanhamento no GitHub Projects. A numeração é contínua dentro de cada tipo de requisito, independentemente da área responsável.
+Cada requisito possui um identificador único, uma descrição objetiva e uma prioridade. O acompanhamento da implementação, dos responsáveis, das histórias de usuário, dos critérios de aceitação e das tarefas relacionadas será realizado no GitHub Projects.
 
-## Classificação e Priorização
+## Épicos do Projeto
 
-Os **Requisitos Funcionais (RF)** definem os comportamentos e serviços que o micromouse e seus sistemas associados devem fornecer, como navegação, monitoramento e registro de dados.
+Os requisitos do projeto estão organizados nos seguintes épicos:
 
-Os **Requisitos Não Funcionais (RNF)** estabelecem critérios mensuráveis de qualidade, desempenho, segurança e restrições físicas que a solução deve cumprir.
+1. **Épico 1 — Estrutura do Micromouse**
+2. **Épico 2 — Hardware e Sensoriamento**
+3. **Épico 3 — Alimentação e Energia**
+4. **Épico 4 — Navegação e Controle**
+5. **Épico 5 — Sistema Web e Telemetria**
+6. **Épico 6 — Banco de Dados e Histórico**
+7. **Épico 7 — Integração e Validação**
 
-A prioridade de cada item é definida pela classificação MoSCoW:
+Os épicos representam agrupamentos funcionais do produto e não correspondem necessariamente às equipes responsáveis por sua implementação. Um mesmo épico pode envolver diferentes áreas técnicas, como Software, Hardware, Energia e Estruturas.
 
-- **Must:** requisito indispensável para a entrega e validação do projeto.
-- **Should:** requisito importante, a ser implementado quando houver viabilidade técnica e de prazo.
-- **Could:** requisito desejável, implementado caso não comprometa os itens de maior prioridade.
+---
 
-## Requisitos Funcionais (RF)
+# Requisitos Funcionais (RF)
 
-**Energia**
+Os **Requisitos Funcionais (RF)** definem os comportamentos, funções e serviços que o micromouse e os sistemas associados devem fornecer.
 
-| **ID** | **Nome do Requisito** | **Descrição** | **Prioridade** | **Responsáveis** | **Link Github Projects** |
-|:------:|------------------------|---------------|:--------------:|------------------|--------------------------|
-|  **RF1**  | Telemetria energética em tempo real | Durante cada percurso, o sistema deve exibir no sistema web o consumo de bateria em tempo real e associá-lo à execução realizada. | Must | Gabriel Andrade Magioli | [#1](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/1) |
-|  **RF2**  | Isolamento manual da alimentação | O circuito de alimentação deve incluir uma chave física de fácil acesso que desconecte a bateria dos subsistemas do robô, permitindo desligamento seguro durante transporte, montagem e manutenção. | Must | Rafael Silva Wasconcelos | [#2](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/2) |
-|  **RF3**  | Aviso web de bateria baixa | O firmware deve acompanhar periodicamente a tensão da bateria e, ao identificar nível crítico, emitir um aviso no sistema web durante a execução. | Must | Pedro Gustavo Nunes Silva | [#3](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/3) |
-|  **RF4**  | Bateria removível e reinstalável | A bateria deve poder ser removida e recolocada no micromouse de forma simples, sem exigir a desmontagem completa do chassi. | Could | Gabriel Andrade Magioli | [#4](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/4) |
+Eles descrevem **o que o sistema deve fazer**, incluindo ações realizadas pelo robô, pelo software embarcado, pelo sistema web e pelos demais componentes da solução.
 
-**Hardware**
+A prioridade de cada requisito é definida pela classificação MoSCoW:
 
-| **ID** | **Nome do Requisito** | **Descrição** | **Prioridade** | **Responsáveis** | **Link Github Projects** |
-|:------:|------------------------|---------------|:--------------:|------------------|--------------------------|
-|  **RF5**  | Reconhecimento Espacial e Detecção de Obstáculos | O sistema deve realizar a amostragem contínua do ambiente por meio de sensores de proximidade para identificar a presença de paredes (5 cm de altura) e aberturas nas direções frontal, laterais e diagonais. | Must have | Maria Laura | [#53](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/53) |
-|  **RF6**  |Processamento Embarcado Autônomo  | O sistema deve utilizar unidade microcontrolada para executar localmente a leitura de sensores, a lógica de controle e o armazenamento do mapa em memória, sem dependência de processamento externo. |Must have  | Vinícius Araújo Oliveira | [#54](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/54) |
-|  **RF7**  | Acionamento e Modulação de Potência Motriz|O sistema deve conter driver de potência para converter comandos lógicos em acionamento elétrico reversível com modulação contínua de velocidade (PWM) para os motores de tração.  | Must have | Maria Laura | [#55](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/55) |
-|  **RF8**  | Manutenção de Trajetória Centralizada | O sistema de atuação deve ajustar o movimento diferencial do robô para manter a trajetória reta e centralizada entre as paredes dos corredores do labirinto.| Must have | Vinícius Araújo Oliveira | [#56](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/56) |
-|  **RF9**  |Execução de Curvas e Manobras de Rotação  | O sistema de tração diferencial deve permitir a execução precisa de giros de 90° e 180° sobre o próprio eixo do robô, compatíveis com as células de 18 cm × 18 cm do labirinto. | Must have | Maria Laura | [#57](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/57) |
-|  **RF10**  |Transmissão Sem Fio de Telemetria | O sistema deve disponibilizar canal de comunicação sem fio para enviar pacotes de dados da corrida em tempo real para a aplicação web. | Must have | Vinícius Araújo Oliveira | [#58](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/58) |
-|  **RF11**  | Regulação e Distribuição de Energia | O sistema deve receber a alimentação da fonte recarregável e distribuir tensões reguladas e estáveis para a eletrônica de controle, sensores e atuadores. | Must have | Maria Laura | [#59](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/59) |
-|  **RF12**  | Interface Física de Operação e Disparo | O sistema deve conter chave ou botão físico acessível externamente no chassi para comando manual de início e interrupção da navegação. | Must have | Vinícius Araújo Oliveira | [#60](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/60) |
+* **Must:** requisito indispensável para a entrega e validação do projeto.
+* **Should:** requisito importante, a ser implementado quando houver viabilidade técnica e de prazo.
+* **Could:** requisito desejável, implementado caso não comprometa os itens de maior prioridade.
 
-**Estruturas**
+## ÉPICO 1 — Estrutura do Micromouse
 
-| **ID** | **Nome do Requisito**                         | **Descrição**                                                                                                                                                                                                                                        | **Prioridade** | **Responsáveis** | **Link Github Projects** |
-| :----: | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------: | ---------------- | ------------------------ |
-|   **RF13**  | Proteção dos componentes internos             | A estrutura deve proteger os componentes eletrônicos, sensores, motores e demais módulos internos contra choques mecânicos e possíveis danos decorrentes da movimentação ou de eventuais colisões durante a execução dos percursos.                  |      Must      | Heitor Santos Nobre | [#73](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/73) |
-|   **RF14**  | Acesso aos componentes internos               | A estrutura deve permitir o acesso aos componentes internos para inspeção, manutenção, substituição e realização de ajustes, sem exigir a desmontagem completa do chassi.                                                                            |     Should     | Heitor Santos Nobre | [#72](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/72) |
-|  **RF15**  | Fixação dos subsistemas                       | A estrutura deve possuir pontos de fixação adequados para acomodar e manter posicionados os componentes dos subsistemas de Hardware, Energia e Software embarcado, evitando deslocamentos durante a movimentação do micromouse.                      |      Must      | Heitor Santos Nobre | [#71](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/71) |
-|  **RF16**  | Modularidade estrutural                       | A estrutura deve permitir a substituição ou atualização de módulos e componentes de forma independente, possibilitando alterações no protótipo sem a necessidade de reconstrução completa do chassi.                                                 |     Should     | Heitor Santos Nobre | [#69](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/69) |
-|  **RF17**  | Fixação e alinhamento do sistema de locomoção | A estrutura deve possuir pontos de fixação para motores, rodas e demais elementos do sistema de locomoção, mantendo seu posicionamento e alinhamento durante a execução dos percursos.                                                               |      Must      | Heitor Santos Nobre | [#68](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/68) |
-|  **RF18**  | Acomodação e posicionamento dos sensores      | A estrutura deve possuir espaços e pontos de fixação adequados para a instalação dos sensores nas posições definidas pelo projeto, permitindo que permaneçam orientados e desobstruídos durante o percurso.                                          |      Must      | Heitor Santos Nobre | [#67](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/67) |
-|  **RF19**  | Organização e proteção do cabeamento          | A estrutura deve disponibilizar meios para organizar e proteger os cabos e conexões internas, evitando que interfiram na movimentação das rodas, motores, sensores ou demais componentes durante a operação.                                         |      Must      | Heitor Santos Nobre | [#66](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/66) |
-|  **RF20**  | Acesso aos elementos de operação              | A estrutura deve permitir o acesso externo aos elementos necessários para operação, manutenção e preparação do micromouse, como chave de alimentação, conectores e demais interfaces definidas pelos subsistemas.                                    |     Should     | Heitor Santos Nobre | [#64](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/64) |
+### Área: Estruturas
 
+| ID  | Requisito                                     | Descrição                                                                                                                                                    | Prioridade |
+| --- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| RF1 | Proteção dos componentes internos             | O produto deve proteger os componentes eletrônicos, sensores, motores e demais módulos contra choques e colisões durante a operação.                         | Must       |
+| RF2 | Acesso aos componentes internos               | O produto deve permitir acesso aos componentes internos para inspeção, manutenção, substituição e ajustes sem necessidade de desmontagem completa do chassi. | Should     |
+| RF3 | Fixação dos subsistemas                       | O produto deve possuir pontos de fixação adequados para os componentes de hardware, energia e software embarcado, evitando deslocamentos durante a operação. | Must       |
+| RF4 | Modularidade estrutural                       | O produto deve permitir a substituição ou atualização de módulos de forma independente, sem necessidade de reconstrução completa do chassi.                  | Should     |
+| RF5 | Fixação e alinhamento do sistema de locomoção | O produto deve permitir a fixação dos motores, rodas e demais elementos de tração, mantendo sua posição e alinhamento durante a operação.                    | Must       |
+| RF6 | Acomodação e posicionamento dos sensores      | O produto deve possuir espaços e pontos de fixação para os sensores, mantendo sua orientação adequada e evitando obstruções.                                 | Must       |
+| RF7 | Organização e proteção do cabeamento          | O produto deve organizar e proteger os cabos de modo que não interfiram nas rodas, motores, sensores ou demais componentes.                                  | Must       |
+| RF8 | Acesso aos elementos de operação              | O produto deve permitir acesso externo ao interruptor de alimentação, conectores e demais interfaces necessárias para operação e manutenção.                 | Should     |
 
-**Software**
+## ÉPICO 2 — Hardware e Sensoriamento
 
-| **ID** | **Nome do Requisito**                         | **Descrição**                                                                                                                                                                                                                                        | **Prioridade** | **Responsáveis** | **Link Github Projects** |
-| :----: | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------: | ---------------- | ------------------------ |
-| **RF21** | Identificação de paredes            | O software do **Rato Cego** deve identificar a presença de paredes no percurso a partir dos dados fornecidos pelos sensores.                                                                   | Must   | Thiago Alencar | [#21](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/21) |
-| **RF22** | Localização no labirinto            | O software do **Rato Cego** deve monitorar a localização do robô dentro do labirinto durante o percurso.                                                                                       | Must   | Thiago Alencar | [#22](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/22) |
-| **RF23** | Determinação do percurso            | O software do **Rato Cego** deve determinar autonomamente os movimentos necessários para avançar pelo labirinto com base nas informações obtidas durante o percurso.                           | Must   | Thiago Alencar | [#23](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/23) |
-| **RF24** | Navegação autônoma                  | O **Rato Cego** deve navegar pelo labirinto sem intervenção humana durante a execução do percurso.                                                                                             | Must   | Thiago Alencar | [#24](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/24) |
-| **RF25** | Identificação do objetivo           | O software do **Rato Cego** deve identificar quando o robô alcançar a área de objetivo do labirinto.                                                                                           | Must   | Laryssa Felix Ribeiro Lopes | [#25](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/25) |
-| **RF26** | Registro do trajeto                 | O sistema deve registrar o trajeto percorrido pelo **Rato Cego** durante cada execução.                                                                                                        | Must   | Laryssa Felix Ribeiro Lopes | [#26](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/26) |
-| **RF27** | Transmissão de telemetria           | O **Rato Cego** deve transmitir ao sistema web os dados de desempenho necessários para o acompanhamento da execução.                                                                           | Must   | Pedro Augusto Moretti Moreira | [#27](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/27) |
-| **RF28** | Identificação do tipo de labirinto  | O sistema web deve identificar e exibir o tipo de labirinto correspondente à execução atual.                                                                                                   | Must   | Maria Eduarda de Jezus Guimaraes | [#28](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/28) |
-| **RF29** | Visualização do trajeto             | Durante o percurso, o sistema web deve exibir e atualizar em tempo real o trajeto percorrido pelo **Rato Cego**.                                                                               | Must   | Pedro Augusto Moretti Moreira | [#29](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/29) |
-| **RF30** | Monitoramento da bateria            | Durante o percurso, o sistema web deve exibir e atualizar em tempo real o consumo de bateria do **Rato Cego**.                                                                                 | Must   | Laryssa Felix Ribeiro Lopes | [#30](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/30) |
-| **RF31** | Monitoramento do tempo              | O sistema deve contabilizar o tempo da execução e apresentá-lo no sistema web durante o percurso.                                                                                              | Must   | Laryssa Felix Ribeiro Lopes | [#31](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/31) |
-| **RF32** | Exibição da velocidade média        | O sistema web deve calcular e apresentar a velocidade média do **Rato Cego** referente à execução.                                                                                             | Must   | Maria Eduarda de Jezus Guimaraes | [#32](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/32) |
-| **RF33** | Resultado do desafio                | O sistema web deve informar se o **Rato Cego** cumpriu ou não o desafio correspondente à execução.                                                                                             | Must   | Laryssa Felix Ribeiro Lopes | [#33](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/33) |
-| **RF34** | Armazenamento da execução           | Após a execução, o sistema deve armazenar no banco de dados as informações coletadas durante o percurso.                                                                                       | Must   | Pedro Augusto Moretti Moreira | [#34](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/34) |
-| **RF35** | Associação ao labirinto             | O sistema deve associar os dados armazenados de cada execução ao respectivo labirinto.                                                                                                         | Must   | Pedro Augusto Moretti Moreira | [#35](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/35) |
-| **RF36** | Consulta por labirinto              | O sistema web deve permitir consultar os dados das execuções referentes a um labirinto específico.                                                                                             | Must   | Pedro Augusto Moretti Moreira | [#36](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/36) |
-| **RF37** | Consulta geral                      | O sistema web deve permitir consultar conjuntamente os dados armazenados das execuções realizadas nos diferentes labirintos.                                                                   | Must   | Maria Eduarda de Jezus Guimaraes | [#37](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/37) |
-| **RF38** | Consulta local do estado energético | O **Rato Cego** poderia informar localmente a condição da bateria por meio de um indicador visual, permitindo sua verificação sem acesso ao sistema web.                                       | Could  | Laryssa Felix Ribeiro Lopes | [#38](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/38) |
-| **RF39** | Conservação em bateria baixa        | O firmware do **Rato Cego** deveria monitorar a condição da bateria e, ao identificar nível crítico, adotar medidas para preservar energia e evitar desligamentos abruptos durante a execução. | Should | Laryssa Felix Ribeiro Lopes | [#39](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/39) |
-| **RF40** | Sinalização do ciclo de recarga     | Durante a recarga, o **Rato Cego** poderia indicar visualmente o estado do ciclo de carregamento.                                                                                              | Could  | Laryssa Felix Ribeiro Lopes | [#40](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/40) |
+### Área: Hardware
 
+| ID   | Requisito                                        | Descrição                                                                                                                                                                              | Prioridade |
+| ---- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RF9  | Reconhecimento Espacial e Detecção de Obstáculos | O sistema deve realizar amostragem contínua do ambiente por meio de sensores de proximidade, permitindo detectar paredes de 5 cm de altura e aberturas frontais, laterais e diagonais. | Must       |
+| RF10 | Processamento Embarcado Autônomo                 | O microcontrolador deve executar localmente a leitura dos sensores, a lógica de controle e o armazenamento do mapa, sem depender de processamento externo.                             | Must       |
+| RF11 | Acionamento e Modulação de Potência Motriz       | O sistema deve converter comandos lógicos em acionamento elétrico reversível, permitindo modulação contínua da velocidade por PWM para os motores de tração.                           | Must       |
+| RF12 | Manutenção de Trajetória Centralizada            | O sistema deve ajustar diferencialmente o acionamento dos motores para manter o micromouse em trajetória reta e centralizada entre as paredes do labirinto.                            | Must       |
+| RF13 | Execução de Curvas e Manobras de Rotação         | O sistema deve permitir a execução de curvas e rotações precisas de 90° e 180° sobre o próprio eixo, compatíveis com células de 18 × 18 cm.                                            | Must       |
+| RF14 | Transmissão Sem Fio de Telemetria                | O sistema deve possuir um canal sem fio para transmitir os dados da execução em tempo real ao sistema web.                                                                             | Must       |
+| RF15 | Regulação e Distribuição de Energia              | O sistema deve receber a alimentação da fonte recarregável e distribuir tensões reguladas e estáveis aos componentes eletrônicos, sensores e atuadores.                                | Must       |
+| RF16 | Interface Física de Operação e Disparo           | O produto deve possuir um interruptor ou botão externo acessível para permitir o início manual e a interrupção da navegação.                                                           | Must       |
 
-## Requisitos Não-Funcionais (RNF)
+## ÉPICO 3 — Alimentação e Energia
 
-**Energia**
+### Área: Energia
 
-| **ID** | **Nome do Requisito** | **Descrição** | **Prioridade** | **Responsáveis** | **Link Github Projects** |
-|:------:|------------------------|---------------|:--------------:|------------------|--------------------------|
-| **RNF1** | Autonomia operacional | Com sensores, controle, motores e telemetria ativos no perfil normal de corrida, o Rato Cego deve funcionar continuamente por pelo menos 30 minutos sem recarga ou troca de bateria. | Must | Rafael Silva Wasconcelos | [#5](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/5) |
-| **RNF2** | Rendimento da conversão de energia | Os conversores e reguladores de tensão devem apresentar eficiência igual ou superior a 85% na faixa nominal de carga dos subsistemas que alimentam. | Should | Pedro Gustavo Nunes Silva | [#6](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/6) |
-| **RNF3** | Consumo em inatividade | Quando o robô estiver ligado e sem executar uma corrida, a corrente total do sistema deve permanecer em até 50 mA, desativando periféricos que não sejam necessários. | Should | Gabriel Andrade Magioli | [#7](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/7) |
-| **RNF4** | Aviso preventivo de descarga | O sistema deve reconhecer a condição de baixa carga e gerar alerta quando qualquer célula atingir 3,3 V, antes de alcançar uma faixa que possa comprometer sua vida útil. | Must | Rafael Silva Wasconcelos | [#8](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/8) |
-| **RNF5** | Restrição de massa do conjunto energético | Bateria, circuito de recarga, reguladores, proteções e cabeamento de alimentação não podem, em conjunto, ultrapassar 25% da massa final do micromouse. | Must | Pedro Gustavo Nunes Silva | [#9](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/9) |
-| **RNF6** | Integridade da alimentação dos sensores | Sob aceleração e partida dos motores, a tensão fornecida aos sensores deve se manter entre 95% e 105% de seu valor nominal. | Must | Gabriel Andrade Magioli | [#10](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/10) |
-| **RNF7** | Proteção contra falhas elétricas | O sistema de alimentação deve interromper ou limitar a corrente em situações de sobrecorrente ou curto-circuito, protegendo a bateria e os circuitos eletrônicos. | Must | Rafael Silva Wasconcelos | [#11](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/11) |
-| **RNF8** | Confiabilidade da telemetria energética | Após a calibração, as leituras de tensão e consumo registradas pelo robô devem apresentar erro máximo de 5% em relação ao instrumento de referência. | Should | Gabriel Andrade Magioli | [#13](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/13) |
-| **RNF9** | Compatibilidade de tensão dos subsistemas | A tensão nominal e a faixa de descarga da bateria devem ser compatíveis com todos os subsistemas, utilizando BECs devidamente dimensionados para fornecer a tensão e a corrente requeridas por cada subsistema. | Must | Pedro Gustavo Nunes Silva | [#15](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/15) |
+| ID   | Requisito                           | Descrição                                                                                                                                                           | Prioridade |
+| ---- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RF17 | Telemetria energética em tempo real | Durante cada execução, o sistema web deve apresentar o consumo da bateria em tempo real e associá-lo à execução correspondente.                                     | Must       |
+| RF18 | Isolamento manual da alimentação    | O circuito de alimentação deve possuir um interruptor físico acessível que permita desconectar a bateria dos subsistemas durante transporte, montagem e manutenção. | Must       |
+| RF19 | Aviso web de bateria baixa          | O firmware deve monitorar periodicamente a tensão da bateria e, ao atingir um nível crítico, emitir um aviso ao sistema web durante a execução.                     | Must       |
+| RF20 | Bateria removível e reinstalável    | A bateria deve poder ser removida e reinstalada sem a necessidade de desmontagem completa do chassi.                                                                | Could      |
 
-**Hardware**
+## ÉPICO 4 — Navegação e Controle
 
-| **ID** | **Nome do Requisito** | **Descrição** | **Prioridade** | **Responsáveis** | **Link Github Projects** |
-|:------:|------------------------|---------------|:--------------:|------------------|--------------------------|
-| **RNF10** | Limite Dimensional e Geométrico | O robô montado não deve exceder as dimensões máximas de **16,5 cm de largura por 16,5 cm de comprimento** em qualquer estado operacional. | Must have | Maria Laura | [#61](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/61) |
-| **RNF11** | Autonomia de Alimentação | A bateria deve fornecer autonomia para no mínimo **30 minutos** de operação contínua (ou 3 corridas completas) sem recarga. | Must  have | Vinícius Araújo Oliveira | [#62](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/62) |
-| **RNF12** | Proteção e Margem de Segurança Elétrica | O circuito deve possuir proteção contra inversão de polaridade e condutores dimensionados com no mínimo **30% de margem** sobre a corrente de pico. | Must have | Maria Laura | [#63](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/63) |
-| **RNF13** | Estabilidade de Tensão Lógica | O circuito de regulação deve manter flutuação máxima de **±5%** nas linhas lógicas (3,3V e 5V) durante a partida dos motores. | Must have | Vinícius Araújo Oliveira | [#65](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/65) |
-| **RNF14** | Latência da Malha Física de Resposta | O tempo decorrido entre a leitura dos sensores de proximidade e o acionamento efetivo dos motores deve ser de no máximo **50 ms**. | Must have | Maria Laura | [#70](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/70) |
+### Área: Software
 
+| ID   | Requisito                           | Descrição                                                                                                                                                      | Prioridade |
+| ---- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RF21 | Identificação de paredes            | O software deve identificar paredes a partir dos dados recebidos dos sensores.                                                                                 | Must       |
+| RF22 | Localização no labirinto            | O sistema deve monitorar a localização do robô no labirinto durante a execução.                                                                                | Must       |
+| RF23 | Determinação do percurso            | O sistema deve determinar autonomamente os movimentos necessários com base nas informações obtidas durante a execução.                                         | Must       |
+| RF24 | Navegação autônoma                  | O robô deve navegar pelo labirinto sem intervenção humana durante a execução.                                                                                  | Must       |
+| RF25 | Identificação do objetivo           | O sistema deve identificar quando o robô atingir a área objetivo do labirinto.                                                                                 | Must       |
+| RF26 | Registro do trajeto                 | O sistema deve registrar o trajeto percorrido pelo robô durante cada execução.                                                                                 | Must       |
+| RF27 | Seleção do tipo de labirinto        | O sistema web deve permitir que o operador selecione o tipo de labirinto antes do início da execução.                                                          | Must       |
+| RF28 | Configuração da execução            | O sistema deve permitir a configuração dos parâmetros necessários para uma execução, incluindo o tipo de labirinto.                                            | Must       |
+| RF29 | Início do percurso                  | O operador deve poder iniciar a execução após a configuração dos parâmetros necessários.                                                                       | Must       |
+| RF30 | Interrupção do percurso             | O operador deve poder interromper uma execução em andamento, fazendo com que o micromouse interrompa sua navegação de forma segura.                            | Must       |
+| RF31 | Reinício de execução                | O sistema deve permitir o início de uma nova execução após o término ou interrupção de uma execução anterior.                                                  | Should     |
+| RF32 | Gerenciamento do estado da execução | O sistema deve controlar os estados da execução, incluindo, no mínimo, aguardando, em execução, concluída, interrompida e encerrada por falha ou timeout.      | Must       |
+| RF33 | Encerramento automático da execução | O sistema deve encerrar automaticamente a execução quando o objetivo for atingido, o tempo máximo for excedido ou ocorrer uma falha que impeça a continuidade. | Must       |
+| RF34 | Parada segura                       | Em situações de interrupção, perda de comunicação ou falha detectada, o sistema deve interromper ou limitar o acionamento dos motores de forma segura.         | Must       |
+| RF35 | Medição de deslocamento             | O sistema deve utilizar os encoders dos motores para obter informações relacionadas ao deslocamento e à velocidade do robô.                                    | Must       |
 
+## ÉPICO 5 — Sistema Web e Telemetria
 
-**Estruturas**
+### Área: Software
 
-| **ID** | **Nome do Requisito**                         | **Descrição**                                                                                                                                                                                                                              | **Prioridade** | **Responsáveis** | **Link Github Projects** |
-| :----: | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------: | ---------------- | ------------------------ |
-| **RNF15** | Limite dimensional do chassi                  | O conjunto estrutural do **Rato Cego** deve respeitar o limite máximo de 16,5 cm de comprimento e 16,5 cm de largura em configuração de operação, garantindo distanciamento mecânico livre de interferências para o curso dos componentes de locomoção e posicionamento desobstruído dos sensores. |      Must      | Heitor Santos Nobre | [#74](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/74) |
-| **RNF16** | Compatibilidade com as dimensões do labirinto | A geometria e os elementos externos da estrutura devem ser dimensionados para livre circulação nos corredores de células de 18 cm de lado, sendo isentos de cantos vivos, arestas salientes ou pontos de atrito que possam causar travamento, arraste mecânico ou danos/deslocamento às paredes do percurso.                                               |      Must      | Heitor Santos Nobre | [#75](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/75) |
-| **RNF17** | Massa estrutural                              | A massa do chassi e dos elementos estruturais deve ser mantida dentro de um limite que não comprometa a aceleração, frenagem, estabilidade e autonomia do micromouse.                                                                      |      Must      | Heitor Santos Nobre | [#76](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/76) |
-| **RNF18** | Resistência mecânica                          | A estrutura deve suportar os esforços mecânicos decorrentes da movimentação, aceleração, frenagem e eventuais impactos durante os testes, sem apresentar deformações que comprometam o funcionamento do robô.                              |      Must      | Heitor Santos Nobre | [#77](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/77) |
-| **RNF19** | Rigidez estrutural                            | O chassi deve apresentar rigidez suficiente para manter sua geometria e os componentes fixados em suas posições durante a execução dos percursos, evitando deformações ou folgas que prejudiquem a navegação.                              |      Must      | Heitor Santos Nobre | [#78](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/78) |
-| **RNF20** | Estabilidade estrutural                       | A estrutura deve proporcionar estabilidade ao micromouse durante acelerações, frenagens, curvas e mudanças de direção, evitando inclinações ou deslocamentos que comprometam sua movimentação.                                             |      Must      | Heitor Santos Nobre | [#79](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/79) |
-| **RNF21** | Distribuição de massa                         | A disposição dos componentes na estrutura deve proporcionar uma distribuição de massa adequada, evitando desequilíbrios que possam prejudicar a estabilidade e o desempenho do micromouse durante o percurso.                              |     Should     | Heitor Santos Nobre | [#80](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/80) |
-| **RNF22** | Compatibilidade entre subsistemas             | A estrutura deve possuir dimensões, espaços internos e pontos de fixação compatíveis com os componentes definidos pelas equipes de Hardware, Energia e Software, permitindo a integração dos subsistemas sem interferências físicas.       |      Must      | Heitor Santos Nobre | [#81](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/81) |
-| **RNF23** | Precisão dimensional de fabricação            | As dimensões finais da estrutura devem permanecer dentro das tolerâncias definidas no projeto, garantindo que variações decorrentes do processo de fabricação não façam o micromouse ultrapassar os limites dimensionais estabelecidos.    |      Must      | Heitor Santos Nobre | [#82](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/82) |
-| **RNF24** | Segurança estrutural                          | A estrutura não deve apresentar pontas, arestas ou elementos expostos que possam causar danos aos componentes, ao labirinto ou comprometer a operação do micromouse.                                                                       |      Must      | Heitor Santos Nobre | [#83](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/83) |
-| **RNF25** | Durabilidade da estrutura                     | A estrutura deve manter suas características mecânicas e dimensões durante os testes e execuções previstas no projeto, sem apresentar desgaste ou deformação que comprometa o funcionamento do micromouse.                                 |     Should     | Heitor Santos Nobre | [#84](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/84) |
-| **RNF26** | Facilidade de montagem e desmontagem          | A estrutura deve ser projetada de forma que sua montagem, desmontagem e manutenção possam ser realizadas utilizando os recursos e ferramentas disponíveis para a equipe, sem procedimentos excessivamente complexos.                       |     Should     | Heitor Santos Nobre | [#85](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/85) |
-| **RNF27** | Aproveitamento do espaço interno              | A estrutura deve utilizar de forma eficiente o espaço disponível no chassi, permitindo a acomodação dos componentes necessários sem comprometer a circulação, manutenção, ventilação ou funcionamento dos demais subsistemas.              |     Should     | Heitor Santos Nobre | [#86](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/86) |
-| **RNF28** | Compatibilidade com os materiais disponíveis  | Os materiais utilizados na fabricação devem ser compatíveis com os processos de fabricação, ferramentas, orçamento e recursos disponíveis para o desenvolvimento do projeto.                                                  |      Must      | Heitor Santos Nobre | [#87](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/87) |
+| ID   | Requisito                              | Descrição                                                                                                                                       | Prioridade |
+| ---- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RF36 | Transmissão de telemetria              | O robô deve transmitir os dados de desempenho necessários para o monitoramento pelo sistema web.                                                | Must       |
+| RF37 | Visualização do trajeto                | O sistema web deve apresentar e atualizar o trajeto percorrido pelo robô em tempo real.                                                         | Must       |
+| RF38 | Monitoramento da bateria               | O sistema web deve apresentar e atualizar o consumo da bateria em tempo real.                                                                   | Must       |
+| RF39 | Monitoramento do tempo                 | O sistema deve contabilizar o tempo de execução e apresentá-lo no sistema web durante a execução.                                               | Must       |
+| RF40 | Exibição da velocidade média           | O sistema web deve calcular e apresentar a velocidade média da execução.                                                                        | Must       |
+| RF41 | Resultado do desafio                   | O sistema web deve informar se o robô concluiu o desafio.                                                                                       | Must       |
+| RF42 | Estabelecimento da conexão WebSocket   | O sistema deve estabelecer uma conexão WebSocket entre o sistema web e o serviço responsável pela comunicação em tempo real durante a execução. | Must       |
+| RF43 | Detecção de perda de conexão WebSocket | O sistema deve detectar a perda ou indisponibilidade da conexão WebSocket durante a execução.                                                   | Must       |
+| RF44 | Reconexão WebSocket                    | O sistema deve realizar tentativas automáticas de reconexão WebSocket conforme a política definida para o projeto.                              | Should     |
+| RF45 | Sinalização de indisponibilidade       | O sistema web deve informar ao operador quando uma comunicação necessária para a execução estiver indisponível.                                 | Must       |
+| RF46 | Comunicação MQTT                       | O sistema deve utilizar MQTT para transmissão e recepção de dados conforme a arquitetura definida para o projeto.                               | Must       |
+| RF47 | Reconexão MQTT                         | O sistema deve realizar reconexão após uma perda de comunicação MQTT.                                                                           | Must       |
+| RF48 | Tratamento de mensagens MQTT           | O sistema deve validar e processar as mensagens MQTT recebidas de acordo com o formato definido para a comunicação.                             | Must       |
 
+## ÉPICO 6 — Banco de Dados e Histórico
 
-**Software**
+### Área: Software
 
-| **ID** | **Nome do Requisito**                         | **Descrição**                                                                                                                                                                                                                              | **Prioridade** | **Responsáveis** | **Link Github Projects** |
-| :----: | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------: | ---------------- | ------------------------ |
-| **RNF29** | Tempo máximo de execução                | O sistema do **Rato Cego** deve permitir que cada tentativa de resolução do labirinto seja realizada dentro do limite máximo de **10 minutos** estabelecido para o desafio.                                                   | Must       | Laryssa Felix Ribeiro Lopes | [#41](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/41) |
-| **RNF30** | Atualização da telemetria               | O sistema web deve receber, processar e atualizar em tempo real os dados de telemetria transmitidos pelo **Rato Cego** durante o percurso.                                                                                    | Must       | Pedro Augusto Moretti Moreira | [#42](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/42) |
-| **RNF31** | Integridade da telemetria               | O sistema deve garantir que os dados de telemetria recebidos e apresentados correspondam aos dados transmitidos pelo **Rato Cego**, sem alteração indevida das informações.                                                   | Must       | Pedro Augusto Moretti Moreira | [#43](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/43) |
-| **RNF32** | Persistência dos dados                  | Os dados referentes às execuções concluídas devem permanecer armazenados no banco de dados e disponíveis para consultas posteriores.                                                                                          | Must       | Pedro Augusto Moretti Moreira | [#44](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/44) |
-| **RNF33** | Integridade dos dados armazenados       | O sistema deve preservar a associação entre os dados de cada execução e o respectivo labirinto, evitando que informações de execuções distintas sejam incorretamente relacionadas.                                            | Must       | Pedro Augusto Moretti Moreira | [#45](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/45) |
-| **RNF34** | Compatibilidade com os labirintos       | O software de navegação do **Rato Cego** deve ser compatível com os três labirintos definidos para o projeto: **4×4, 8×4 e 12×4 células**, sendo cada célula de **18 cm de lado**.                                            | Must       | Thiago Alencar | [#46](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/46) |
-| **RNF35** | Compatibilidade com o hardware          | O software embarcado deve ser compatível com os componentes eletrônicos utilizados no **Rato Cego** e necessários às funções de sensoriamento, navegação e comunicação.                                                       | Must       | Thiago Alencar | [#47](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/47) |
-| **RNF36** | Compatibilidade com o microcontrolador  | O software embarcado do **Rato Cego** deve ser executável no microcontrolador **ESP32** utilizado no protótipo.                                                                                                               | Must       | Laryssa Felix Ribeiro Lopes | [#48](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/48) |
-| **RNF37** | Adaptação da representação do labirinto | A interface web deveria adaptar a representação visual do mapeamento às dimensões dos três tipos de labirinto utilizados pelo **Rato Cego**, mantendo todas as células e o trajeto visíveis.                                  | Should     | Maria Eduarda de Jezus Guimaraes | [#49](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/49) |
-| **RNF38** | Legibilidade da telemetria              | A interface web deve apresentar separadamente os seis dados obrigatórios de telemetria: tipo do labirinto, trajeto percorrido, consumo de bateria, velocidade média, tempo de conclusão e situação de cumprimento do desafio. | Must       | Pedro Augusto Moretti Moreira | [#50](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/50) |
-| **RNF39** | Responsividade da interface             | A interface web deveria adaptar sua disposição a diferentes dimensões de tela sem provocar sobreposição ou corte das informações obrigatórias de telemetria.                                                                  | Should     | Maria Eduarda de Jezus Guimaraes | [#51](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/51) |
-| **RNF40** | Restrição de recursos                   | A solução de software deve utilizar tecnologias compatíveis com os recursos técnicos, materiais e financeiros disponíveis para o desenvolvimento do projeto.                                                                  | Must       | Laryssa Felix Ribeiro Lopes | [#52](https://github.com/fcte-pi1/2026_2_PI1_Grupo02_Bruno/issues/52) |
+| ID   | Requisito                      | Descrição                                                                                                               | Prioridade |
+| ---- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RF49 | Armazenamento da execução      | Após cada execução, o sistema deve armazenar os dados coletados em um banco de dados.                                   | Must       |
+| RF50 | Associação ao labirinto        | Os dados armazenados devem ser associados ao labirinto correspondente à execução.                                       | Must       |
+| RF51 | Consulta por labirinto         | O sistema web deve permitir a consulta dos dados de execução referentes a um labirinto específico.                      | Must       |
+| RF52 | Consulta geral                 | O sistema web deve permitir a consulta conjunta dos dados armazenados de diferentes labirintos.                         | Must       |
+| RF53 | Registro de falhas da execução | O sistema deve registrar falhas de comunicação, timeouts, interrupções e condições que impeçam a conclusão da execução. | Must       |
+
+## ÉPICO 7 — Integração e Validação
+
+### Área: Integração
+
+| ID   | Requisito                       | Descrição                                                                                               | Prioridade |
+| ---- | ------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------- |
+| RF54 | Correção da movimentação        | O sistema deve utilizar as informações de odometria para auxiliar no controle e posicionamento do robô. | Must       |
+| RF55 | Calibração dos sensores         | O sistema deve permitir a calibração dos sensores antes da operação.                                    | Should     |
+| RF56 | Sinalização do ciclo de recarga | Durante a recarga, o robô deve poder indicar visualmente o estado do ciclo de carregamento.             | Could      |
+
+---
+
+# Requisitos Não Funcionais (RNF)
+
+Os **Requisitos Não Funcionais (RNF)** definem características, restrições, limites e condições de qualidade que devem ser atendidos pelo produto.
+
+Eles descrevem **como o sistema deve funcionar**, estabelecendo características como dimensões, desempenho, autonomia, segurança, confiabilidade, compatibilidade e latência.
+
+A prioridade segue a mesma classificação MoSCoW utilizada nos requisitos funcionais:
+
+* **Must:** requisito indispensável para a entrega e validação do projeto.
+* **Should:** requisito importante, a ser implementado quando houver viabilidade técnica e de prazo.
+* **Could:** requisito desejável, implementado caso não comprometa os itens de maior prioridade.
+
+## ÉPICO 1 — Estrutura do Micromouse
+
+### Área: Estruturas
+
+| ID    | Requisito                                     | Descrição                                                                                                                                                         | Prioridade |
+| ----- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RNF1  | Limite dimensional do chassi                  | O chassi deve possuir dimensões máximas de 16,5 × 16,5 cm e não apresentar interferências mecânicas durante a operação.                                           | Must       |
+| RNF2  | Compatibilidade com as dimensões do labirinto | A geometria deve permitir movimentação livre em células de 18 cm, sem pontos cortantes, salientes ou de atrito que possam causar travamentos ou danos.            | Must       |
+| RNF3  | Massa estrutural                              | A massa da estrutura deve permanecer dentro do limite estabelecido, sem comprometer aceleração, frenagem, estabilidade ou autonomia.                              | Must       |
+| RNF4  | Resistência mecânica                          | A estrutura deve suportar movimentação, aceleração, frenagem e impactos sem sofrer deformações que afetem seu funcionamento.                                      | Must       |
+| RNF5  | Rigidez estrutural                            | A estrutura deve possuir rigidez suficiente para preservar sua geometria e a posição dos componentes, evitando deformações ou folgas que prejudiquem a navegação. | Must       |
+| RNF6  | Estabilidade estrutural                       | A estrutura deve permanecer estável durante acelerações, frenagens, curvas e mudanças de direção.                                                                 | Must       |
+| RNF7  | Distribuição de massa                         | A distribuição de massa deve ser adequada, evitando desequilíbrios que prejudiquem o funcionamento do robô.                                                       | Should     |
+| RNF8  | Compatibilidade entre subsistemas             | As dimensões, espaços e pontos de fixação da estrutura devem ser compatíveis com os componentes de Hardware, Energia e Software.                                  | Must       |
+| RNF9  | Precisão dimensional de fabricação            | As dimensões finais da estrutura devem permanecer dentro das tolerâncias definidas para o projeto.                                                                | Must       |
+| RNF10 | Segurança estrutural                          | A estrutura não deve possuir pontos, arestas ou elementos expostos que possam causar danos ou comprometer a operação.                                             | Must       |
+| RNF11 | Durabilidade da estrutura                     | As características mecânicas e dimensões da estrutura devem ser mantidas durante os testes e execuções.                                                           | Should     |
+| RNF12 | Facilidade de montagem e desmontagem          | A estrutura deve permitir montagem, desmontagem e manutenção utilizando as ferramentas disponíveis, sem procedimentos excessivamente complexos.                   | Should     |
+| RNF13 | Aproveitamento do espaço interno              | O espaço interno deve ser utilizado de forma eficiente, sem comprometer circulação, manutenção, ventilação ou integração dos demais subsistemas.                  | Should     |
+| RNF14 | Compatibilidade com os materiais disponíveis  | Os materiais utilizados devem ser compatíveis com os processos de fabricação, ferramentas, orçamento e recursos disponíveis.                                      | Must       |
+
+## ÉPICO 2 — Hardware e Sensoriamento
+
+### Área: Hardware
+
+| ID    | Requisito                               | Descrição                                                                                                                                        | Prioridade |
+| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| RNF15 | Limite Dimensional e Geométrico         | O micromouse deve possuir largura máxima de 16,5 cm e comprimento máximo de 16,5 cm em qualquer estado operacional.                              | Must       |
+| RNF16 | Autonomia de Alimentação                | A bateria deve fornecer autonomia mínima de 30 minutos ou permitir a realização de 3 execuções completas.                                        | Must       |
+| RNF17 | Proteção e Margem de Segurança Elétrica | O sistema deve possuir proteção contra inversão de polaridade e condutores dimensionados com margem mínima de 30% em relação à corrente de pico. | Must       |
+| RNF18 | Estabilidade de Tensão Lógica           | O regulador deve manter as linhas de 3,3 V e 5 V dentro de uma variação máxima de ±5% durante a partida dos motores.                             | Must       |
+| RNF19 | Latência da Malha Física de Resposta    | O tempo entre a leitura de um sensor e o acionamento efetivo do motor deve ser de, no máximo, 50 ms.                                             | Must       |
+
+## ÉPICO 3 — Alimentação e Energia
+
+### Área: Energia
+
+| ID    | Requisito                                 | Descrição                                                                                                                                                            | Prioridade |
+| ----- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RNF20 | Autonomia operacional                     | Com sensores, controle, motores e telemetria ativos, o sistema deve operar por pelo menos 30 minutos sem recarga ou substituição da bateria.                         | Must       |
+| RNF21 | Rendimento da conversão de energia        | Os conversores e reguladores devem apresentar eficiência mínima de 85% na carga nominal.                                                                             | Should     |
+| RNF22 | Consumo em inatividade                    | Com o sistema ligado, mas sem execução, a corrente total deve ser de no máximo 50 mA, desabilitando periféricos desnecessários.                                      | Should     |
+| RNF23 | Aviso preventivo de descarga              | O sistema deve emitir alerta quando qualquer célula atingir 3,3 V, antes de atingir uma faixa potencialmente prejudicial.                                            | Must       |
+| RNF24 | Restrição de massa do conjunto energético | Os componentes relacionados à energia devem representar no máximo 25% da massa final do produto.                                                                     | Must       |
+| RNF25 | Integridade da alimentação dos sensores   | Durante acelerações e partidas dos motores, a alimentação dos sensores deve permanecer entre 95% e 105% da tensão nominal.                                           | Must       |
+| RNF26 | Proteção contra falhas elétricas          | O sistema deve interromper ou limitar a corrente em situações de sobrecorrente ou curto-circuito.                                                                    | Must       |
+| RNF27 | Confiabilidade da telemetria energética   | Após calibração, as medições de tensão e consumo devem apresentar erro máximo de 5% em relação a um instrumento de referência.                                       | Should     |
+| RNF28 | Compatibilidade de tensão dos subsistemas | A tensão nominal e a faixa de descarga da bateria devem ser compatíveis com todos os subsistemas, com os BECs dimensionados para as tensões e correntes necessárias. | Must       |
+
+## ÉPICO 4 — Navegação e Controle
+
+### Área: Software
+
+| ID    | Requisito                              | Descrição                                                                                                                                       | Prioridade |
+| ----- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RNF29 | Tempo máximo de execução               | Cada tentativa de solução do labirinto deve ser realizada em, no máximo, 10 minutos.                                                            | Must       |
+| RNF30 | Compatibilidade com os labirintos      | O software de navegação deve ser compatível com labirintos de 4 × 4, 8 × 4 e 12 × 4, com células de 18 cm.                                      | Must       |
+| RNF31 | Compatibilidade com o hardware         | O software embarcado deve ser compatível com os componentes eletrônicos necessários para sensoriamento, navegação e comunicação.                | Must       |
+| RNF32 | Compatibilidade com o microcontrolador | O software embarcado deve ser executável no ESP32.                                                                                              | Must       |
+| RNF33 | Timeout da conexão WebSocket           | O sistema deve detectar uma conexão WebSocket inativa após o tempo máximo de timeout definido pelo projeto.                                     | Must       |
+| RNF34 | Tempo de reconexão WebSocket           | O sistema deve realizar a reconexão WebSocket de acordo com o intervalo e o número máximo de tentativas definidos pelo projeto.                 | Should     |
+| RNF35 | Timeout/Keep-Alive MQTT                | A comunicação MQTT deve utilizar mecanismos de keep-alive e timeout compatíveis com os requisitos de comunicação do projeto.                    | Must       |
+| RNF36 | Reconexão MQTT                         | O sistema deve possuir mecanismo de reconexão após perda da comunicação MQTT.                                                                   | Must       |
+| RNF37 | Integridade das mensagens              | As mensagens trocadas devem seguir o formato definido pelo projeto e possuir mecanismos para identificação e tratamento de mensagens inválidas. | Must       |
+| RNF38 | Latência da telemetria                 | Os dados de telemetria devem estar disponíveis no sistema web dentro da latência máxima definida pelo projeto.                                  | Must       |
+| RNF39 | Precisão de sensoriamento              | Os sensores devem possuir precisão suficiente para permitir a navegação dentro das tolerâncias definidas pelo projeto.                          | Should     |
+
+## ÉPICO 5 — Sistema Web e Telemetria
+
+### Área: Software
+
+| ID    | Requisito                               | Descrição                                                                                                                                                                                       | Prioridade |
+| ----- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| RNF40 | Atualização da telemetria               | O sistema web deve receber, processar e atualizar os dados de telemetria em tempo real.                                                                                                         | Must       |
+| RNF41 | Integridade da telemetria               | Os dados recebidos e apresentados pelo sistema web devem corresponder aos dados transmitidos pelo robô, sem alterações indevidas.                                                               | Must       |
+| RNF42 | Adaptação da representação do labirinto | O sistema web deve adaptar a representação visual do mapa às três dimensões de labirinto, mantendo todas as células e o trajeto visíveis.                                                       | Should     |
+| RNF43 | Legibilidade da telemetria              | O sistema web deve apresentar separadamente os seis dados obrigatórios de telemetria: tipo de labirinto, trajeto, consumo da bateria, velocidade média, tempo de conclusão e status do desafio. | Must       |
+| RNF44 | Responsividade da interface             | O sistema web deve se adaptar a diferentes tamanhos de tela sem sobreposição ou corte dos dados obrigatórios de telemetria.                                                                     | Should     |
+| RNF45 | Restrição de recursos                   | As tecnologias utilizadas no software devem ser compatíveis com os recursos técnicos, materiais e financeiros disponíveis para o projeto.                                                       | Must       |
+
+## ÉPICO 6 — Banco de Dados e Histórico
+
+### Área: Software
+
+| ID    | Requisito                         | Descrição                                                                                                    | Prioridade |
+| ----- | --------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------- |
+| RNF46 | Persistência dos dados            | Os dados de uma execução concluída devem permanecer armazenados e disponíveis para consultas posteriores.    | Must       |
+| RNF47 | Integridade dos dados armazenados | Os dados armazenados devem preservar corretamente a associação entre cada execução e o respectivo labirinto. | Must       |
+
+## ÉPICO 7 — Integração e Validação
+
+O Épico 7 reúne requisitos relacionados à integração dos diferentes subsistemas e à validação do produto. Os requisitos não funcionais específicos dessa etapa serão definidos conforme os testes de integração e validação forem detalhados.
