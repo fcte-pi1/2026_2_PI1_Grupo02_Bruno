@@ -793,7 +793,7 @@ O Modelo Entidade-Relacionamento (MER) apresenta os principais conceitos de dado
 
 <p align="center"><em>Figura 7 – Modelo Entidade-Relacionamentol.</em></p>
 
-<p align="center">
+<p 
   <img src="figs/software_dados/mer.png" alt="Modelo Entidade-Relacionamento">
 </p>
 
@@ -807,7 +807,7 @@ O Diagrama Entidade-Relacionamento (DER) detalha a estrutura de dados proposta p
 
 <p align="center"><em>Figura 8 – Diagrama Entidade-Relacionamentol.</em></p>
 
-<p align="center">
+<p 
   <img src="figs/software_dados/der.svg" alt="Modelo Entidade-Relacionamento">
 </p>
 
@@ -843,6 +843,9 @@ Todos os serviços de software residem no mesmo computador local . O robô é o 
 
 <p align="center"><em>Diagrama de Implantação.</em></p>
 
+<p 
+  <img src="figs/software_dados/implantacao.svg" alt="Modelo Entidade-Relacionamento">
+</p>
 
 O contêiner do Mosquitto monta o arquivo de configuração e, se habilitados, diretórios persistentes de dados e logs. O PostgreSQL utiliza armazenamento persistente para que reinícios de processos não apaguem o histórico. O backend inicia com a conexão ao banco e às configurações da corretora; o frontend recebe o endereço local da API e do WebSocket. A porta 1883 precisa ser acessível ao robô na rede local; As demais portas podem ser restritas ao computador quando a interface é usada apenas nele. A solução opera sem Internet, desde que computador, robô e rede local estão disponíveis.
 
