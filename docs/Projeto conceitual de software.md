@@ -791,11 +791,7 @@ A posição pode ser incorporada à tabela telemetry_sample, pois seus três atr
 **MER — Modelo Entidade-Relacionamento**
 O Modelo Entidade-Relacionamento (MER) apresenta os principais conceitos de dados do Rato Cego e as relações entre eles. O modelo identifica Labirinto, Execução e Amostra de Telemetria como entidades necessárias para associar cada tentativa ao tipo de labirinto selecionado e registrar o trajeto e as medições produzidas durante a corrida. Nesta visão conceitual, são apresentadas as relações e suas cardinalidades, sem detalhar a estrutura das tabelas do banco de dados.
 
-<p align="center"><em>Figura 7 – Modelo Entidade-Relacionamentol.</em></p>
-
-<p 
-  <img src="figs/software_dados/mer.png" alt="Modelo Entidade-Relacionamento">
-</p>
+![Modelo Entidade-Relacionamento](./figs/software_dados/mer.png)
 
 - Um labirinto pode estar associado a várias execuções; cada execução pertence a um labirinto.
 - Uma execução pode registrar várias amostras de telemetria, inclusive no início não for confirmado; cada amostra pertence a uma execução.
@@ -807,9 +803,7 @@ O Diagrama Entidade-Relacionamento (DER) detalha a estrutura de dados proposta p
 
 <p align="center"><em>Figura 8 – Diagrama Entidade-Relacionamentol.</em></p>
 
-<p 
-  <img src="figs/software_dados/der.svg" alt="Modelo Entidade-Relacionamento">
-</p>
+![Diagrama Entidade-Relacionamento](figs/software_dados/der.svg)
 
 Uma tentativa pertence a um tipo de labirinto; um tipo pode ter vários esforços. Uma tentativa pode ter zero ou muitas amostras: uma solicitação de início que falhou, por exemplo, pode não ter nenhuma. O trajeto consultado posteriormente é obtido ordenando as posições das amostras por sequência .
 Os índices poderão ser run(maze_id, request_at) , run(status) e telemetry_sample(run_id, sequence) . A duração é derivada de start_at e terminou_at ; não precisa ser armazenado em uma coluna redundante. O banco deve preservar também experimento FAILED e INTERRUPTED , identificando claramente resultados desconhecidos por challenge_completed = NULL , quando aplicável.
@@ -846,6 +840,9 @@ Todos os serviços de software residem no mesmo computador local . O robô é o 
 <p 
   <img src="figs/software_dados/implantacao.svg" alt="Modelo Entidade-Relacionamento">
 </p>
+
+
+![Diagrama de Implantação](figs/software_dados/implantacao.svg)
 
 O contêiner do Mosquitto monta o arquivo de configuração e, se habilitados, diretórios persistentes de dados e logs. O PostgreSQL utiliza armazenamento persistente para que reinícios de processos não apaguem o histórico. O backend inicia com a conexão ao banco e às configurações da corretora; o frontend recebe o endereço local da API e do WebSocket. A porta 1883 precisa ser acessível ao robô na rede local; As demais portas podem ser restritas ao computador quando a interface é usada apenas nele. A solução opera sem Internet, desde que computador, robô e rede local estão disponíveis.
 
