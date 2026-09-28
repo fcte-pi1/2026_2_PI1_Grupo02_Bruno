@@ -794,7 +794,7 @@ O Modelo Entidade-Relacionamento (MER) apresenta os principais conceitos de dado
 <p align="center"><em>Figura 7 – Modelo Entidade-Relacionamentol.</em></p>
 
 <p align="center">
-  <img src="figs/mer.png" alt="Modelo Entidade-Relacionamento">
+  <img src="figs/software_dados/mer.png" alt="Modelo Entidade-Relacionamento">
 </p>
 
 - Um labirinto pode estar associado a várias execuções; cada execução pertence a um labirinto.
@@ -808,7 +808,7 @@ O Diagrama Entidade-Relacionamento (DER) detalha a estrutura de dados proposta p
 <p align="center"><em>Figura 8 – Diagrama Entidade-Relacionamentol.</em></p>
 
 <p align="center">
-  <img src="figs/der.svg" alt="Modelo Entidade-Relacionamento">
+  <img src="figs/software_dados/der.svg" alt="Modelo Entidade-Relacionamento">
 </p>
 
 Uma tentativa pertence a um tipo de labirinto; um tipo pode ter vários esforços. Uma tentativa pode ter zero ou muitas amostras: uma solicitação de início que falhou, por exemplo, pode não ter nenhuma. O trajeto consultado posteriormente é obtido ordenando as posições das amostras por sequência .
