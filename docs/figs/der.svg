@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1150" viewBox="0 0 1200 1150">
+  <style>
+    text { font-family: Arial, sans-serif; fill: #000; font-size: 18px; }
+    .title { font-size: 28px; font-weight: bold; }
+    .entity { font-size: 22px; font-weight: bold; }
+    .small { font-size: 16px; }
+    .box, .rule, .edge { fill: none; stroke: #000; stroke-width: 2; }
+  </style>
+  <rect width="1200" height="1150" fill="#fff"/>
+  <text x="600" y="48" text-anchor="middle" class="title">DER — Rato Cego</text>
+
+  <rect class="box" x="55" y="100" width="505" height="270"/>
+  <line class="rule" x1="55" y1="151" x2="560" y2="151"/>
+  <text x="307" y="134" text-anchor="middle" class="entity">LABIRINTO</text>
+  <text x="80" y="186">id: UUID  [PK]</text>
+  <text x="80" y="220">tipo: VARCHAR  [UNIQUE]</text>
+  <text x="80" y="254">nome: VARCHAR</text>
+  <text x="80" y="288">linhas: INTEGER</text>
+  <text x="80" y="322">colunas: INTEGER</text>
+
+  <rect class="box" x="640" y="100" width="505" height="495"/>
+  <line class="rule" x1="640" y1="151" x2="1145" y2="151"/>
+  <text x="892" y="134" text-anchor="middle" class="entity">EXECUÇÃO</text>
+  <text x="665" y="186">id: UUID  [PK, runId]</text>
+  <text x="665" y="220">id_labirinto: UUID  [FK]</text>
+  <text x="665" y="254">status: VARCHAR</text>
+  <text x="665" y="288">solicitada_em: TIMESTAMP</text>
+  <text x="665" y="322">iniciada_em: TIMESTAMP</text>
+  <text x="665" y="356">encerrada_em: TIMESTAMP</text>
+  <text x="665" y="390">desafio_concluido: BOOLEAN</text>
+  <text x="665" y="424">distancia_percorrida_m: DECIMAL</text>
+  <text x="665" y="458">velocidade_media_m_s: DECIMAL</text>
+  <text x="665" y="492">carga_consumida_mah: DECIMAL</text>
+  <text x="665" y="526">energia_consumida_wh: DECIMAL</text>
+
+  <line class="edge" x1="560" y1="216" x2="640" y2="216"/>
+
+  <rect class="box" x="345" y="665" width="645" height="430"/>
+  <line class="rule" x1="345" y1="716" x2="990" y2="716"/>
+  <text x="667" y="699" text-anchor="middle" class="entity">Amostra_Telemetria</text>
+  <text x="370" y="751">id: BIGINT  [PK]</text>
+  <text x="370" y="781">id_execucao: UUID  [FK]</text>
+  <text x="370" y="811">id_evento: UUID  [UNIQUE]</text>
+  <text x="370" y="841">sequencia: BIGINT  [UNIQUE com id_execucao]</text>
+  <text x="370" y="871">registrada_em: TIMESTAMP</text>
+  <text x="370" y="901">linha, coluna: INTEGER</text>
+  <text x="370" y="931">orientacao: VARCHAR</text>
+  <text x="370" y="961">distancia_percorrida_m: DECIMAL</text>
+  <text x="370" y="991">velocidade_atual_m_s: DECIMAL</text>
+  <text x="370" y="1021">tensao_bateria_v: DECIMAL</text>
+  <text x="370" y="1051">corrente_ma, potencia_atual_w: DECIMAL</text>
+
+  <line class="edge" x1="892" y1="595" x2="892" y2="665"/>
+  <text x="55" y="1130" class="small">PK: chave primária   ·   FK: chave estrangeira   ·   UNIQUE: valor único</text>
+</svg>
