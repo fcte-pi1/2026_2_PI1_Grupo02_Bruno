@@ -878,128 +878,224 @@ Fonte: Elaborado pelos autores (2026).
 
 Os casos de teste abaixo cobrem os requisitos de software e estão relacionados às páginas do protótipo funcional. Os testes de firmware são executados com o robô no labirinto; os testes do sistema web podem usar mensagens MQTT simuladas publicadas no Mosquitto, conforme previsto na arquitetura.
 
-### CT-01 - Identificação de paredes
+#### CT-01 - Identificação de paredes
 
 | Atributo | Descrição |
 |---|---|
 | Código | CT-01 |
 | Nome | Identificação de paredes |
-| Rastreabilidade | RF21, RNF35, RNF36 |
+| Rastreabilidade | RF21, RNF29, RNF30, RNF37 |
 | Objetivo | Verificar se o firmware identifica paredes a partir dos sensores. |
 | Pré-condições | Firmware gravado no ESP32; robô dentro de uma célula do labirinto. |
 | Procedimentos | 1. Posicionar paredes à frente, à esquerda e à direita, uma de cada vez. 2. Repetir sem paredes. 3. Comparar o identificado com o montado. |
 | Resultado esperado | As paredes identificadas correspondem às montadas. |
 
-### CT-02 - Localização e registro do trajeto
+#### CT-02 - Localização deslocamento e registro do trajeto
 
 | Atributo | Descrição |
 |---|---|
 | Código | CT-02 |
-| Nome | Localização e registro do trajeto |
-| Rastreabilidade | RF22, RF26 |
-| Objetivo | Verificar se a posição do robô é acompanhada e o trajeto é registrado. |
+| Nome | Localização, deslocamento e registro do trajeto |
+| Rastreabilidade | RF22, RF26,  RF35, RF54|
+| Objetivo | Verificar se a posição do robô é acompanhada com base nos encoders e se o trajeto é registrado. |
 | Pré-condições | Tentativa em andamento; backend recebendo telemetria. |
 | Procedimentos | 1. Anotar as células percorridas pelo robô. 2. Comparar com o trajeto exibido na Página de Monitoramento em Tempo Real. 3. Após o término, comparar com o trajeto final da Página de Detalhe da Execução. |
 | Resultado esperado | O trajeto exibido e o registrado correspondem ao percurso real, na ordem percorrida. |
 
-### CT-03 - Navegação autônoma e identificação do objetivo
+#### CT-03 - Navegação autônoma e identificação do objetivo
 
 | Atributo | Descrição |
 |---|---|
 | Código | CT-03 |
 | Nome | Navegação autônoma e identificação do objetivo |
-| Rastreabilidade | RF23, RF24, RF25, RNF29, RNF34 |
+| Rastreabilidade | RF23, RF24, RF25, RNF27, RNF28  |
 | Objetivo | Verificar se o robô resolve o labirinto sozinho e reconhece o objetivo. |
 | Pré-condições | Labirinto montado; robô na largada. |
 | Procedimentos | 1. Iniciar a tentativa. 2. Acompanhar sem intervenção humana até o fim. 3. Repetir nos labirintos 4×4, 8×4 e 12×4. |
 | Resultado esperado | O robô chega à área de objetivo sem intervenção, o término é informado com o desafio cumprido e cada tentativa dura até 10 minutos. |
 
-### CT-04 - Transmissão da telemetria
+#### CT-04 - Seleção, preparação e início da execução
 
 | Atributo | Descrição |
 |---|---|
 | Código | CT-04 |
-| Nome | Transmissão da telemetria |
-| Rastreabilidade | RF27, RNF30, RNF31 |
-| Objetivo | Verificar se os dados enviados pelo robô chegam ao sistema web sem alteração. |
+| Nome | Seleção, preparação e início da execução |
+| Rastreabilidade | RF27, RF28, RF29, RF31 |
+| Objetivo | Verificar se o operador seleciona o labirinto e inicia uma execução, e se o sistema impede duas execuções ao mesmo tempo. |
 | Pré-condições | Mosquitto, backend e frontend em execução; Página de Monitoramento em Tempo Real aberta. |
-| Procedimentos | 1. Iniciar uma tentativa. 2. Publicar amostras de telemetria. 3. Comparar os valores exibidos com os enviados. |
-| Resultado esperado | A página atualiza sem ser recarregada e exibe os mesmos valores transmitidos. |
+| Procedimentos | 1. Selecionar um tipo de labirinto e solicitar o início. 2. Com a execução em andamento, solicitar um novo início. 3. Após a execução terminar, solicitar um novo início. |
+| Resultado esperado | Passo 1: a execução inicia com o labirinto selecionado. Passo 2: o novo início é recusado. Passo 3: a nova execução é iniciada normalmente. |
 
-### CT-05 - Exibição dos seis dados obrigatórios
+#### CT-05 - Interrupção e parada segura
 
 | Atributo | Descrição |
 |---|---|
 | Código | CT-05 |
+| Nome | Interrupção e parada segura |
+| Rastreabilidade | RF30, RF34 |
+| Objetivo | Verificar se o operador interrompe uma execução e se o robô para com segurança. |
+| Pré-condições | Execução em andamento na Página de Monitoramento em Tempo Real. |
+| Procedimentos | 1. Solicitar a interrupção pela interface. 2. Observar o robô. 3. Verificar o estado exibido. |
+| Resultado esperado | O robô interrompe o movimento, a execução passa para "interrompida" e os dados parciais são mantidos. |
+
+#### CT-06 - Estados e encerramento automático da execução
+
+| Atributo | Descrição |
+|---|---|
+| Código | CT-06 |
+| Nome | Estados e encerramento automático da execução |
+| Rastreabilidade | RF32, RF33 |
+| Objetivo | Verificar se os estados da execução são exibidos e se o encerramento automático ocorre nas situações previstas. |
+| Pré-condições | Sistema web em execução; Página de Monitoramento em Tempo Real aberta. |
+| Procedimentos | 1. Observar o estado antes de iniciar. 2. Iniciar e observar o estado durante a corrida. 3. Deixar o robô alcançar o objetivo. 4. Iniciar sem que o robô confirme o início. 5. Manter uma execução até atingir o tempo máximo. |
+| Resultado esperado | Passos 1 a 3: estados "aguardando", "em execução" e "concluída". Passo 4: estado de falha. Passo 5: execução encerrada automaticamente por tempo. |
+
+
+#### CT-07 - Recepção e integridade da telemetria
+
+| Atributo | Descrição |
+|---|---|
+| Código | CT-07 |
+| Nome | Recepção e integridade da telemetria |
+| Rastreabilidade | RF36, RF46, RF48, RNF35, RNF36, RNF38, RNF39 |
+| Objetivo | Verificar se a telemetria chega ao sistema web sem alteração e se mensagens inválidas são descartadas. |
+| Pré-condições | Mosquitto, backend e frontend em execução; execução em andamento. |
+| Procedimentos | 1. Publicar amostras de telemetria válidas. 2. Comparar os valores exibidos com os enviados. 3. Publicar uma mensagem inválida (formato incorreto ou de outra execução). |
+| Resultado esperado | A página atualiza sem ser recarregada e exibe os mesmos valores enviados; a mensagem inválida é descartada ou sinalizada sem alterar a execução. |
+
+#### CT-08 - Exibição dos seis dados obrigatórios
+
+| Atributo | Descrição |
+|---|---|
+| Código | CT-08 |
 | Nome | Exibição dos seis dados obrigatórios |
-| Rastreabilidade | RF28, RF29, RF30, RF31, RF32, RF33, RNF38 |
+| Rastreabilidade | RF37, RF38, RF39, RF40, RF41, RF17, RF19, RNF41 |
 | Objetivo | Verificar se os seis dados aparecem separados e atualizados na Página de Monitoramento em Tempo Real. |
 | Pré-condições | Tentativa em andamento na Página de Monitoramento em Tempo Real. |
 | Procedimentos | 1. Verificar se o tipo do labirinto exibido é o selecionado. 2. Verificar se o trajeto é atualizado a cada nova posição. 3. Verificar se o consumo de bateria é atualizado a cada amostra. 4. Verificar se o tempo é contabilizado durante a corrida. 5. Verificar se a velocidade média é exibida e atualizada. 6. Enviar tensão abaixo do nível crítico e verificar o alerta de bateria. 7. Ao fim, verificar se é informado se o desafio foi cumprido (S/N). |
 | Resultado esperado | Os seis dados aparecem separados e coerentes com a telemetria recebida, e o alerta de bateria aparece em nível crítico. |
 
-### CT-06 - Adaptação e responsividade da interface
+#### CT-09 - Conexão, perda e reconexão WebSocket
 
 | Atributo | Descrição |
 |---|---|
-| Código | CT-06 |
+| Código | CT-09 |
+| Nome | Conexão, perda e reconexão WebSocket |
+| Rastreabilidade | RF42, RF43, RF44, RF45, RNF31, RNF32 |
+| Objetivo | Verificar se a interface se conecta, detecta a perda de conexão, avisa o operador e reconecta sozinha. |
+| Pré-condições | Backend em execução; Página de Monitoramento em Tempo Real aberta. |
+| Procedimentos | 1. Abrir a página e verificar a conexão. 2. Interromper o backend durante uma execução. 3. Observar a interface. 4. Restaurar o backend. |
+| Resultado esperado | A conexão é estabelecida automaticamente; a perda é detectada e informada ao operador; a conexão é restabelecida sem recarregar a página, dentro dos limites dos RNF31 e RNF32. |
+
+#### CT-10 - Perda e reconexão MQTT
+
+| Atributo | Descrição |
+|---|---|
+| Código | CT-10 |
+| Nome | Perda e reconexão MQTT |
+| Rastreabilidade | RF47, RF45, RNF33, RNF34 |
+| Objetivo | Verificar se o sistema detecta a perda do broker MQTT e se reconecta automaticamente. |
+| Pré-condições | Mosquitto, backend e frontend em execução. |
+| Procedimentos | 1. Interromper o Mosquitto. 2. Observar o backend e a interface. 3. Restaurar o Mosquitto. 4. Publicar nova amostra de telemetria. |
+| Resultado esperado | A indisponibilidade é informada ao operador; o backend se reconecta dentro dos limites dos RNF33 e RNF34 e volta a receber a telemetria. |
+
+#### CT-11 - Adaptação e responsividade da interface
+
+| Atributo | Descrição |
+|---|---|
+| Código | CT-11 |
 | Nome | Adaptação e responsividade da interface |
-| Rastreabilidade | RNF37, RNF39 |
+| Rastreabilidade | RNF40, RNF42 |
 | Objetivo | Verificar se a grade se adapta aos labirintos e as páginas se adaptam a diferentes telas. |
 | Pré-condições | Sistema web em execução. |
 | Procedimentos | 1. Exibir execuções em 4×4, 8×4 e 12×4 na Página de Monitoramento em Tempo Real. 2. Abrir as quatro páginas em tela de computador e de celular. |
 | Resultado esperado | Todas as células, o trajeto e os seis dados ficam visíveis, sem corte ou sobreposição. |
 
-### CT-07 - Armazenamento e associação ao labirinto
+#### CT-12 - Armazenamento e associação ao labirinto
 
 | Atributo | Descrição |
 |---|---|
-| Código | CT-07 |
+| Código | CT-12 |
 | Nome | Armazenamento e associação ao labirinto |
-| Rastreabilidade | RF34, RF35, RNF32, RNF33 |
+| Rastreabilidade | RF49, RF50, RNF44, RNF45 |
 | Objetivo | Verificar se a execução é salva e vinculada ao labirinto correto. |
 | Pré-condições | Banco de dados em execução. |
 | Procedimentos | 1. Concluir uma tentativa em 4×4 e outra em 8×4. 2. Localizar as duas na Página de Consulta Geral. 3. Abrir cada uma na Página de Detalhe da Execução. |
 | Resultado esperado | Cada execução está salva, associada ao seu labirinto e com seus próprios dados, sem mistura entre execuções. |
 
-### CT-08 - Consulta por labirinto e geral
+#### CT-13 - Consulta por labirinto e geral
 
 | Atributo | Descrição |
 |---|---|
-| Código | CT-08 |
+| Código | CT-13 |
 | Nome | Consulta por labirinto e geral |
-| Rastreabilidade | RF36, RF37 |
+| Rastreabilidade | RF51, RF52 |
 | Objetivo | Verificar as consultas do histórico. |
 | Pré-condições | Banco com execuções em mais de um labirinto. |
 | Procedimentos | 1. Na Página de Consulta por Labirinto, selecionar um labirinto. 2. Na Página de Consulta Geral, consultar todas as execuções. |
 | Resultado esperado | A consulta por labirinto mostra só as execuções do labirinto escolhido; a consulta geral mostra todas. |
 
-### CT-09 - Gestão energética embarcada
+#### CT-14 - Registro de falhas da execução
 
 | Atributo | Descrição |
 |---|---|
-| Código | CT-09 |
-| Nome | Gestão energética embarcada |
-| Rastreabilidade | RF38, RF39, RF40 |
-| Objetivo | Verificar a indicação local da bateria, a conservação em nível crítico e a sinalização de recarga. |
-| Pré-condições | Nível crítico definido pela equipe de Energia. |
-| Procedimentos | 1. Observar o indicador do robô com bateria normal e crítica. 2. Verificar o comportamento ao atingir o nível crítico. 3. Observar a sinalização durante a recarga. |
-| Resultado esperado | O indicador diferencia os níveis, o robô preserva energia sem desligar abruptamente e a recarga é sinalizada. |
+| Código | CT-14 |
+| Nome | Registro de falhas da execução |
+| Rastreabilidade | RF53 |
+| Objetivo | Verificar se execuções encerradas por falha, timeout ou interrupção ficam registradas. |
+| Pré-condições | Banco de dados em execução. |
+| Procedimentos | 1. Provocar uma falha de início (robô não confirma). 2. Interromper uma execução em andamento. 3. Consultar as duas na Página de Consulta Geral. |
+| Resultado esperado | As duas execuções aparecem no histórico com o estado correspondente (falha e interrompida). |
+
+#### CT-15 - Calibração dos sensores
+
+| Atributo | Descrição |
+|---|---|
+| Código | CT-15 |
+| Nome | Calibração dos sensores |
+| Rastreabilidade | RF55 |
+| Objetivo | Verificar se os sensores podem ser calibrados antes da operação. |
+| Pré-condições | Procedimento de calibração definido pelo projeto; robô no labirinto. |
+| Procedimentos | 1. Executar o procedimento de calibração. 2. Repetir o CT-01. |
+| Resultado esperado | A calibração é concluída e as paredes continuam sendo identificadas corretamente. |
+
+#### CT-16 - Sinalização do ciclo de recarga
+
+| Atributo | Descrição |
+|---|---|
+| Código | CT-16 |
+| Nome | Sinalização do ciclo de recarga |
+| Rastreabilidade | RF56 |
+| Objetivo | Verificar se o robô indica visualmente o estado da recarga. |
+| Pré-condições |  Bateria parcialmente descarregada; carregador disponível. |
+| Procedimentos | 1. Conectar o carregador e observar a sinalização. 2. Observar novamente ao fim da carga.  |
+| Resultado esperado | A sinalização muda conforme o estado do ciclo de carregamento. |
 
 
 ### Matriz de rastreabilidade
 
 Tabela 1 – Matriz de rastreabilidade entre requisitos, protótipo e casos de teste
 
-| Requisito | Issue | Página do protótipo | Caso de teste |
- |---|---|---|---| 
- | RF21 | #21 | (firmware) | CT-01 | 
- | RF22, RF26 | #22, #26 | Monitoramento em Tempo Real; Detalhe da Execução | CT-02 | 
- | RF23, RF24, RF25 |  #23, #24, #25 | (firmware) | CT-03 | 
- | RF27 |  #27 | Monitoramento em Tempo Real | CT-04 | 
- | RF28 a RF33 | #28 a #33 | Monitoramento em Tempo Real | CT-05 | 
- | RF34, RF35 | #34, #35 | Consulta Geral; Detalhe da Execução | CT-07 | 
- | RF36 |   #36 | Consulta por Labirinto | CT-08 | 
- | RF37 |   #37 | Consulta Geral | CT-08 | 
- | RF38, RF39, RF40 |   #38, #39, #40 | (firmware) | CT-09 | 
- | RNF37, RNF39 |   #49, #51 | Todas as páginas | CT-06 |
+| Requisito | HU | Página do protótipo | Caso de teste |
+|---|---|---|---| 
+| RF21 | HU21 | (firmware) | CT-01 |
+| RF22, RF26 | HU22, HU26 | Monitoramento em Tempo Real; Detalhe da Execução | CT-02 |
+| RF35, RF54 | HU35, HU54 | (firmware) | CT-02 |
+| RF23, RF24, RF25 | HU23, HU24, HU25 | (firmware) | CT-03 |
+| RF27, RF28, RF29, RF31 | HU27, HU28, HU29, HU31 | Monitoramento em Tempo Real | CT-04 |
+| RF30, RF34 | HU30, HU34 | Monitoramento em Tempo Real | CT-05 |
+| RF32, RF33 | HU32, HU33 | Monitoramento em Tempo Real | CT-06 |
+| RF36, RF46, RF48 | HU36, HU46, HU48 | Monitoramento em Tempo Real | CT-07 |
+| RF37 a RF41, RF17, RF19 | HU37 a HU41, HU17, HU19 | Monitoramento em Tempo Real | CT-08 |
+| RF42, RF43, RF44, RF45 | HU42, HU43, HU44, HU45 | Monitoramento em Tempo Real | CT-09 |
+| RF47 | HU47 | Monitoramento em Tempo Real | CT-10 |
+| RF49, RF50 | HU49, HU50 | Consulta Geral; Detalhe da Execução | CT-12 |
+| RF51 | HU51 | Consulta por Labirinto | CT-13 |
+| RF52 | HU52 | Consulta Geral | CT-13 |
+| RF53 | HU53 | Consulta Geral | CT-14 |
+| RF55 | HU55 | (firmware) | CT-15 |
+| RF56 | HU56 | (firmware) | CT-16 |
+| RNF40, RNF42 | - | Todas as páginas | CT-11 |
+| RNF43 | - | - | Verificação por inspeção da arquitetura |
+
+Fonte: Elaborado pelos autores (2026).
