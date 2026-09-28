@@ -42,7 +42,7 @@ package "Aplicação de software local" as app {
     interface "RunRepository / MazeRepository" as repositoryport
   }
   component "Frontend React\nNavegador do usuário" as frontend
-  database "Banco de dados\nTecnologia a definir" as database
+  database "PostgreSQL\nBanco relacional local" as database
 }
 
 frontend --> rest : REST
