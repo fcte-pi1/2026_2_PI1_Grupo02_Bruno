@@ -1,172 +1,157 @@
 # Projeto Conceitual de Software
 
-- [Explicações adicionais](https://drive.google.com/file/d/1WWIz6609c7Y7zAQRBWHSbX0t2vEJ2z1A/view?usp=sharing)
-- [Noções de UML](https://drive.google.com/file/d/1l1yt2ittHuRKIXVXYT76P1HriR07pK-t/view?usp=sharing)
-- [Requisitos](https://engsoftmoderna.info/cap3.html)
-
-> **Itens fundamentais:**
-> - **Diagrama Atividades UML:** descrever e explicar o fluxo do comportamento funcional do produto proposto, evidenciando, de forma clara e estruturada, como as atividades são executadas, em que ordem e sob quais condições. Esse diagrama permite compreender o funcionamento dinâmico do sistema, destacando:
->   - os principais atores (usuários ou sistemas externos) envolvidos no processo;
->   - as atividades de negócio realizadas por cada ator ou pelo próprio sistema;
->   - os insumos (entradas) necessários para a execução das atividades;
->   - os resultados (saídas) gerados ao longo do fluxo;
->   - os pontos de decisão, paralelismo e sincronização das atividades;
->   - Entre as notações mais relevantes, destacam-se o estado inicial e final, atividades, nós de decisão e junção, barras de bifurcação, Raias (*swimlanes*) e Fluxos de controle.
-> - **_Backlog_ do Produto**
->   - Detalhar os requisitos funcionais (RF) com a técnica de documentação e especificação de história de usuário (HU);
->   - Protótipos de interface gráfica do *software* em alta fidelidade.
->     - **Todas HUs devem conter sua descrição (Eu-Como-Para), critérios de aceitação e protótipos de interface, documentadas no github.**
->   - Exporte as informações do Backlog do Produto no GitHub Projects [em formato CSV](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-your-project/exporting-your-projects-data), e [renderize em Markdown](https://www.google.com/search?q=convert+CSV+file+to+Markdown+table) no formato a seguir:
-
-### Requisitos Funcionais
-
-<u>RF-00/Épico-00: Título do RF/Épico</u>
-
-| ID (Link Github Projects) | Título | Prioridade |
-|:------| :-- | :--- |
-| HU-00 | | |
-| HU-01 | | |
-| HU-02 | | |
-
-<u>RF-01/Épico-01: Título do RF/Épico</u>
-
-| ID (Link Github Projects) | Título | Prioridade |
-|:--------------------------| :-- | :--- |
-| HU-03                     | | |
-| HU-04                     | | |
-| HU-05                     | | |
-
-### Requisitos Não-Funcionais
-
-| ID (Link Github Projects) | Título | Prioridade | Rastreabilidade |
-|:--------------------------| :-- | :--- |:----------------|
-| RNF-01                    | | | RF-00/HU-00     |
-| RNF-02                    | | |                 |
-| RNF-03                    | | |                 |
-
-> 
-> - **Descrição da arquitetura da solução de _software_ proposta:**
->   - Esta subseção deve contemplar o documento de arquitetura do sistema e deve ser estruturado segundo as visões (4+1) previstas no processo unificado (UP): lógica, de processos; implementação, implantação e dados (substituirá a visão de casos de uso).
->   - Propósito do *software* (qual o seu papel no sistema);
->   - Padrão adotado: MVC, MVP, Microsserviços, Monolítico, etc (Justificar);
->   - Linguagens de programação: Java, Python, C#, JavaScript, etc.
->   - *Frameworks* e bibliotecas: Spring Boot, .NET Core, React, Angular, Django, etc.
->   - Banco de dados: Relacional (PostgreSQL, MySQL, etc) X NãoSQL (MongoDB, etc).
->   - Persistência de dados: Modelo Entidade-Relacionamento (MER) e seu respectivo Diagrama Entidade-Relacionamento (DER), aplicáveis quando a solução utiliza banco de dados relacional; alternativamente, diagrama de estrutura de documentos, empregado nos casos em que a arquitetura adota banco de dados não relacional.
-> - **Roteiro de testes funcionais:**
->   - Código do caso de teste;
->   - Nome do caso de teste;
->   - Rastreabilidade: Link do(a) RF/HU associado(a);
->   - Objetivo do caso de teste;
->   - Pré-condições do sistema para o teste ser realizado, quando se aplicar;
->   - Descrição dos procedimentos a serem executados para o teste;
->   - Resultado esperado para o teste ser aprovado (pós-condição após realizado o teste);
-
----
-
 ## Arquitetura proposta da solução de software
 
 Esta seção descreve a arquitetura proposta para a aplicação de software do Rato Cego, composta pelo broker MQTT local Eclipse Mosquitto, backend, frontend e banco de dados. A integração com o robô ocorre por meio das mensagens MQTT descritas nesta seção.
 
 Os serviços serão executados localmente, no mesmo computador. Portanto, a solução não depende de plataforma de nuvem, de serviços pagos ou de conexão com a Internet. O Mosquitto será executado em um contêiner Docker e deverá expor a porta MQTT `1883` para a rede local usada pelo robô. A configuração do broker será mantida em arquivo próprio, montado no contêiner, para definir o *listener*, a política de acesso e, quando necessário, a persistência e os registros de operação.
 
-### 1. Propósito do software
+### 1. Visão de implementação e diagrama de componentes UML
 
-O propósito do software é permitir que a equipe selecione o tipo de labirinto, solicite o início e a interrupção de uma tentativa pela interface web, além de receber, tratar, apresentar e conservar as informações de telemetria das execuções do Rato Cego. O backend envia os comandos ao robô pelo broker MQTT; o sistema só confirma o início ou a interrupção depois de receber a confirmação correspondente do sistema embarcado.
+O diagrama de componentes (Figura 1) apresenta os módulos previstos e os contratos de comunicação entre eles. O frontend solicita operações pela API REST; o backend publica os comandos pelo broker e recebe do robô confirmações, telemetria e eventos de término. O diagrama representa o PostgreSQL como banco relacional local.
 
-Durante a corrida, o backend recebe as informações por intermédio do broker MQTT, atualiza a tela sem que o usuário precise recarregá-la e permite que a equipe acompanhe o desempenho da execução. Os dados apresentados atendem aos indicadores definidos para o projeto: tipo de labirinto, trajeto percorrido, consumo de bateria, velocidade média, tempo de conclusão e confirmação de que o desafio foi cumprido ou não.
+Figura 1 – Diagrama de componentes UML da solução de software
 
-Após a corrida, os dados são preservados em banco de dados. Assim, a equipe pode consultar uma execução específica, visualizar todas as execuções associadas a determinado labirinto ou obter uma visão conjunta dos resultados. Essa persistência torna possível comparar tentativas, analisar o comportamento do robô e comprovar as informações solicitadas pelos requisitos.
+![Diagrama UML de componentes da solução de software, com interfaces e protocolos](./figs/diagrama_componentes_software.svg)
 
-Em síntese, o software possui quatro responsabilidades principais:
+Fonte: Elaborado pelos autores (2026).
 
-- iniciar e solicitar a interrupção de tentativas a partir da interface web, mantendo o estado sincronizado com as confirmações do robô;
-- receber de forma confiável a telemetria produzida pelo micromouse;
-- disponibilizar a telemetria ao vivo em uma interface web clara e responsiva;
-- registrar as execuções encerradas e disponibilizar seus dados para consulta posterior.
+Os retângulos representam componentes; os círculos identificam as interfaces `RunCommandPublisher`, `TelemetryPublisher` e `RunRepository`/`MazeRepository`. As setas tracejadas representam dependência ou realização de interface, enquanto as contínuas representam comunicação entre componentes. O frontend solicita apenas início e interrupção de uma tentativa; não envia comandos de movimento nem controla a navegação autônoma. O Mosquitto apenas encaminha mensagens MQTT. As portas de persistência isolam os serviços do PostgreSQL e da tecnologia de acesso Spring Data JPA.
 
-### 2. Arquitetura escolhida
+#### 2. Diagrama de pacotes UML
 
-A solução adota uma arquitetura de aplicações monolíticas separadas por responsabilidade. O backend é uma aplicação monolítica desenvolvida em Java com Spring Boot; o frontend é uma aplicação monolítica desenvolvida com React e Tailwind CSS. Elas permanecem no mesmo repositório, mas em diretórios próprios: `src/backend` e `src/frontend`. Essa organização permite desenvolvimento, execução e versionamento independentes, sem introduzir a complexidade operacional de uma arquitetura de microsserviços.
+A Figura 2 apresenta uma organização proposta para os pacotes, com nomes convencionais do ecossistema Spring. Ela ainda não representa a estrutura existente no código: os diretórios de backend e frontend permanecem sem implementação. Os pacotes seguem uma organização em camadas com adaptadores nas bordas: `controller` recebe requisições; `service` concentra os casos de uso e as portas de saída; `model` contém o domínio; `repository` declara as portas de persistência; e `adapter` reúne as integrações concretas. As dependências apontam para as abstrações usadas. O broker, o robô e o banco não aparecem aqui porque são componentes externos, já apresentados na Figura 1.
 
-O backend é organizado em camadas. A camada de entrada recebe mensagens MQTT e requisições HTTP; a camada de serviço processa telemetria, controla o ciclo da execução e aplica as regras de negócio; a camada de persistência armazena e consulta os dados no banco; e a camada de saída expõe operações REST, publica comandos MQTT ao robô e envia atualizações ao vivo por WebSocket. A organização interna seguirá o padrão MVC adaptado a uma API: os controladores recebem requisições REST, os serviços coordenam os casos de uso, e os modelos representam os dados do domínio. Os repositórios fazem a comunicação com o banco de dados.
+Figura 2 – Diagrama de pacotes UML da solução de software
 
-O fluxo de controle e telemetria durante uma tentativa será:
+![Diagrama UML de pacotes do backend e frontend, com dependências entre pacotes](./figs/diagrama_pacotes_software.svg)
 
-1. O usuário seleciona um tipo de labirinto e solicita o início pelo frontend; este envia uma requisição HTTP à API REST.
-2. O backend verifica se não há outra tentativa ativa, gera um `runId`, registra `START_REQUESTED` e publica no Mosquitto o comando MQTT de início com o identificador e o tipo de labirinto.
-3. O robô inicia a navegação e publica `run.started` com o mesmo `runId`. Só após receber essa confirmação o backend registra `IN_PROGRESS`, inicia a contagem do tempo e publica a atualização ao frontend por WebSocket.
-4. Durante a navegação, o robô publica amostras de telemetria com o mesmo `runId`. O backend processa e persiste as amostras e envia atualizações ao vivo ao frontend.
-5. Se o usuário solicitar a interrupção, o backend registra `INTERRUPT_REQUESTED` e publica um comando MQTT de interrupção associado ao `runId` ativo.
-6. Quando o robô confirmar a parada com `run.interrupted`, o backend registra `INTERRUPTED`, preserva os dados parciais e atualiza o frontend. Se o robô publicar `run.finished` antes dessa confirmação, o evento de término define o resultado final.
-7. Se o início não for confirmado no tempo configurado, a solicitação termina em `FAILED`; se a interrupção não for confirmada, o sistema mantém `INTERRUPT_REQUESTED` e informa que a parada não foi confirmada.
+As setas tracejadas com ponta aberta representam dependências UML. `api` depende de `controller` para as operações REST; `realtime` depende de `adapter.websocket` para as atualizações WebSocket. As interfaces `RunCommandPublisher` e `TelemetryPublisher` pertencem ao pacote `service`; `RunRepository` e `MazeRepository` pertencem a `repository`. As implementações concretas ficam nos adaptadores. O adaptador de persistência utiliza Spring Data JPA para acessar o PostgreSQL.
 
-Para acessar dados já armazenados, o frontend envia uma requisição HTTP para a API REST do backend; o controlador direciona a consulta ao serviço correspondente; o serviço recupera as informações no banco de dados definido pelo projeto; e o backend devolve ao frontend uma resposta com os dados solicitados. REST também recebe os comandos de iniciar e interromper; MQTT transporta comandos ao robô e eventos do robô ao backend; WebSocket informa à interface as mudanças de estado e a telemetria ao vivo.
+### 3. Visão e diagrama de implantação
+Todos os serviços de software residem no mesmo computador local . O robô é o único nó separado e alcança o Mosquitto pela rede local. O navegador pode rodar nesse computador; para outro dispositivo acessar uma interface, seria necessário configurar a exposição das portas HTTP e WebSocket na rede.
 
-O Mosquitto, o backend Spring Boot, o banco de dados a definir e o frontend React serão processos distintos no mesmo computador. O Mosquitto atua somente como intermediário de mensagens entre o robô e o backend, nos dois sentidos: ele não concentra regras de negócio nem substitui a persistência do banco. O navegador acessa o frontend localmente e mantém a conexão WebSocket com o backend durante o monitoramento.
+<p align="center"><em>Figura 3 – Diagrama de implantação da solução.</em></p>
 
-### 3. Justificativa da arquitetura
 
-A arquitetura foi definida para permitir que a equipe selecione o labirinto e inicie ou solicite a interrupção de uma tentativa, além de receber telemetria, acompanhar a corrida e armazenar os resultados. A aplicação web coordena o ciclo da tentativa, mas não assume a navegação: o robô continua responsável pelo controle físico e pela execução autônoma do percurso. Os comandos e as confirmações passam pelo broker MQTT.
+![Diagrama de Implantação](figs/software_dados/implantacao.svg)
 
-MQTT foi escolhido como ponto de integração com a telemetria porque é um protocolo de mensagens leve e apropriado para comunicação entre dispositivos embarcados e aplicações locais. O Mosquitto foi selecionado como broker por ser leve, aberto, amplamente utilizado e suficiente para o volume de telemetria previsto. Sua imagem oficial para Docker permite iniciar o serviço localmente com configuração, dados e logs separados em volumes. O modelo de publicação e assinatura desacopla o produtor de mensagens do backend: o produtor publica no Mosquitto, e o backend consome somente os tópicos de que necessita. Isso também facilita testes, pois ferramentas de desenvolvimento podem publicar mensagens simuladas no broker sem depender do robô físico.
+O contêiner do Mosquitto monta o arquivo de configuração e, se habilitados, diretórios persistentes de dados e logs. O PostgreSQL utiliza armazenamento persistente para que reinícios de processos não apaguem o histórico. O backend inicia com a conexão ao banco e às configurações da corretora; o frontend recebe o endereço local da API e do WebSocket. A porta 1883 precisa ser acessível ao robô na rede local; As demais portas podem ser restritas ao computador quando a interface é usada apenas nele. A solução opera sem Internet, desde que computador, robô e rede local estão disponíveis.
 
-WebSocket foi escolhido para o caminho entre backend e interface porque a telemetria precisa ser exibida enquanto a corrida ocorre. Com uma conexão persistente, o servidor envia atualizações assim que recebe e processa uma nova mensagem MQTT. Dessa forma, o frontend não precisa consultar repetidamente a API para descobrir se houve alteração. A API REST permanece apropriada para consultas pontuais do histórico, nas quais o usuário escolhe uma lista, uma execução ou um filtro por labirinto.
 
-O backend monolítico em Spring Boot concentra os módulos que pertencem ao mesmo contexto de negócio: recepção da telemetria, acompanhamento de execução, persistência e disponibilização de dados. Para um projeto acadêmico com prazo e equipe limitados, essa escolha reduz a quantidade de aplicações a configurar, implantar, depurar e manter. A separação em camadas preserva a organização do código e permite evolução futura, caso seja necessário extrair algum módulo.
+### 4. Comunicação entre componentes
 
-O frontend foi separado do backend porque possui uma responsabilidade própria: oferecer uma interface clara para acompanhar e consultar as corridas. React facilita a composição de telas a partir de componentes reutilizáveis e a atualização de partes da página quando a telemetria muda. Tailwind CSS permite aplicar estilos de forma consistente e construir uma interface responsiva, contribuindo para os requisitos de legibilidade e adaptação a diferentes dimensões de tela.
-
-O uso de serviços locais atende à restrição de recursos do projeto. Executar broker, backend, banco e frontend no mesmo computador elimina custos de hospedagem e reduz dependências externas. A principal condição operacional é que o computador esteja ligado e que o broker esteja acessível na rede local durante as corridas acompanhadas pela aplicação.
-
-### 4. Linguagens de programação
-
-| Tecnologia | Linguagem | Uso na solução |
+| Origem → destino | Protocolo | Dados ou operação |
 |---|---|---|
-| Backend | Java | Implementação da API REST, integração MQTT, comunicação WebSocket, regras de negócio e acesso ao banco de dados. |
-| Frontend | JavaScript | Implementação da interface em React, do consumo da API REST e do recebimento de eventos WebSocket. |
-| Estrutura da interface | HTML | Definição da estrutura semântica que será renderizada pelos componentes React. |
-| Estilo da interface | CSS | Definição da apresentação visual e das regras responsivas da aplicação, aplicadas com o auxílio do Tailwind CSS. |
+| Navegador → frontend local | HTTP | Carregamento da aplicação React. |
+| Frontend → backend | HTTP/REST | Início, solicitação de interrupção e consultas históricas. |
+| Frontend ↔ backend | WebSocket | Conexão para receber estados e telemetria ao vivo. |
+| Backend → Mosquitto → robô | MQTT | Comandos `run.start` e `run.interrupt`. |
+| Robô → Mosquitto → backend | MQTT | `run.started`, `telemetry.sample`, `run.finished` e `run.interrupted`. |
+| Backend ↔ PostgreSQL | Protocolo PostgreSQL | Gravação e consulta de tentativas e amostras. |
 
-Java foi selecionada para o backend por sua maturidade no desenvolvimento de aplicações web e pelo ecossistema do Spring Boot, que reúne recursos para APIs, persistência e comunicação em tempo real em uma única aplicação. JavaScript foi selecionada para o frontend porque é a linguagem executada pelos navegadores e possui integração direta com React, HTTP e WebSocket.
+### 5. Diagrama de atividades UML
 
-### 5. Frameworks, bibliotecas e serviços de apoio
+O diagrama de atividades (Figura 4) descreve o comportamento funcional do sistema durante uma tentativa, da seleção do labirinto à consulta do histórico. Ele é organizado em quatro raias: **Usuário** (equipe que opera o sistema), **Frontend** (interface web), **Backend** (aplicação Spring Boot) e **Robô** (firmware do Rato Cego). A comunicação entre Backend e Robô passa pelo broker Mosquitto (MQTT), que apenas encaminha mensagens e, por isso, não é representado como raia.
 
-| Tecnologia | Papel no projeto |
-|---|---|
-| Spring Boot | Base do backend Java. Centraliza configuração, inicialização da aplicação e integração dos módulos do servidor. |
-| Spring Web | Criação da API REST usada pelo frontend para solicitar início/interrupção e consultar execuções e dados históricos. |
-| Spring Integration MQTT | Publicação de comandos de início/interrupção e assinatura dos tópicos de confirmação, término e telemetria no broker local. |
-| Spring WebSocket | Manutenção das conexões em tempo real e envio de atualizações de telemetria ao frontend. |
-| React | Construção da interface web por componentes, telas de acompanhamento e telas de consulta. |
-| Tailwind CSS | Estilização da interface por classes utilitárias, com suporte à organização visual e responsividade das telas. |
-| Vite | Ferramenta de desenvolvimento e compilação do frontend React, fornecendo servidor local e geração dos arquivos da aplicação. |
-| Tecnologia de persistência | Biblioteca ou mecanismo de acesso ao banco será escolhido após a definição do modelo e da tecnologia de banco de dados. |
-| Banco de dados a definir | Serviço local destinado ao histórico de execuções e às consultas por labirinto. A escolha entre modelo relacional e não relacional será registrada na visão de dados. |
-| Mosquitto em Docker | Broker MQTT local executado em contêiner. Intermedeia comandos publicados pelo backend e eventos de confirmação, término e telemetria publicados pelo robô. A porta `1883` é exposta para a rede local e os arquivos de configuração, dados e logs são mantidos fora do contêiner. |
+Figura 4 – Diagrama de atividades UML do ciclo de uma tentativa
 
-Spring Boot, React, Tailwind CSS e Mosquitto são tecnologias definidas para o desenvolvimento. O banco de dados e a tecnologia de persistência ainda não foram definidos; essa decisão será documentada antes da elaboração do MER/DER ou da estrutura de documentos correspondente. A configuração do Mosquitto será definida na etapa de infraestrutura, preservando sua função arquitetural de broker local de telemetria.
+![Diagrama de atividades UML do ciclo de uma tentativa](./figs/diagrama_atividades_software.svg)
 
-### 6. Componentes principais e responsabilidades
 
-Os componentes a seguir delimitam as responsabilidades da solução e servem de base para os diagramas de classes, componentes e pacotes.
+Fonte: Elaborado pelos autores (2026).
 
-| Componente | Responsabilidade | Entradas e saídas principais |
-|---|---|---|
-| Mosquitto em Docker | Intermediar comandos MQTT do backend para o robô e eventos do robô para o backend. É executado em contêiner, com a porta `1883` exposta para a rede local. | Recebe comandos e eventos publicados; entrega-os aos assinantes autorizados. |
-| Adaptador MQTT do backend | Receber confirmações, término e telemetria do robô e publicar comandos de início e interrupção no Mosquitto. | Encaminha eventos recebidos ao serviço de execução/telemetria e publica comandos no tópico de controle. |
-| RunService (execução e histórico) | Coordenar início, confirmação, interrupção, conclusão e falha; associar tipo de labirinto, telemetria e resultado ao `runId`; consultar execuções persistidas. | Recebe pedidos REST e confirmações MQTT; atualiza o estado, persiste a execução e fornece histórico aos controladores. |
-| Serviço de telemetria | Validar e interpretar amostras recebidas, atualizar os indicadores e preparar atualizações para a interface. | Consome amostras MQTT; persiste dados e produz estado atualizado para WebSocket. |
-| Controladores REST | Expor consultas do histórico e operações para iniciar e solicitar interrupção de tentativas. | Recebem `POST /api/runs`, `POST /api/runs/{runId}/interrupt` e consultas do navegador; devolvem o estado/resultados. |
-| Publicador WebSocket | Enviar ao frontend as atualizações produzidas durante a corrida. | Recebe o estado atualizado da execução; transmite eventos aos navegadores conectados. |
-| Modelos e camada de persistência | Representar os dados do domínio e persistir ou consultar as informações no banco. Sua implementação concreta dependerá da tecnologia de banco escolhida. | Converte os dados da aplicação para o formato adotado pelo banco e vice-versa. |
-| Banco de dados a definir | Armazenar execuções concluídas e interrompidas, incluindo telemetria parcial e associação ao labirinto correspondente. | Recebe atualizações durante o ciclo de execução; devolve dados para consultas posteriores. |
-| Frontend React | Permitir seleção do labirinto, solicitar início/interrupção, exibir o estado confirmado da tentativa, acompanhamento ao vivo e histórico. | Envia comandos de operação e consultas via REST; recebe estados e telemetria via WebSocket. |
-| Camada visual Tailwind CSS | Aplicar a apresentação visual e a responsividade das telas React. | Define estilos para os componentes da interface. |
+**Início da tentativa.** O usuário seleciona o tipo de labirinto e solicita o início. O backend verifica se já existe uma tentativa ativa: em caso positivo, o pedido é rejeitado; caso contrário, gera o `runId`, registra `START_REQUESTED` e publica o comando de início. O robô inicia a navegação e publica a confirmação. Se `run.started` não chegar em até **5 segundos** após o envio do comando, a tentativa é registrada como `FAILED`; se chegar, passa a `IN_PROGRESS` e a contagem do tempo começa.
 
-Durante uma execução, o backend publica comandos de início e interrupção solicitados pelo usuário e recebe do robô confirmações, telemetria e o evento de término. O frontend não controla movimentos individuais nem a navegação autônoma; apenas solicita o início ou a interrupção da tentativa. Após a execução, o usuário também pode consultar o histórico pela API REST.
+**Execução em paralelo.** A partir desse ponto, uma barra de bifurcação divide o fluxo em quatro atividades simultâneas:
+- o robô repete o ciclo de identificar paredes, atualizar posição e trajeto, executar o próximo movimento e publicar telemetria;
+- o backend valida cada amostra, calcula tempo, velocidade média e consumo, classifica o estado da bateria, persiste os dados e envia a atualização;
+- o frontend exibe os seis dados obrigatórios e o trajeto, além do aviso de bateria baixa quando o estado for `LOW`;
+- o usuário acompanha a corrida e pode solicitar a interrupção.
 
-O backend gera um `runId` ao aceitar um pedido de início e inclui esse identificador no comando MQTT. O robô devolve o mesmo `runId` em `run.started`, nas amostras de telemetria e nos eventos finais. Como só pode haver uma tentativa ativa, o backend rejeita outro início enquanto a execução anterior não estiver em estado terminal. Ao encerrar uma execução normal ou interrompida, o backend preserva sua associação ao labirinto e as amostras já recebidas.
+**Encerramento.** O ciclo do robô termina quando ele alcança o objetivo, publicando o término com o resultado do desafio, ou quando recebe a interrupção, publicando a confirmação de parada. A barra de junção sincroniza os fluxos; o backend registra o resultado final e persiste a execução associada ao labirinto, e o frontend exibe o resumo. Por fim, o usuário pode consultar o histórico por labirinto específico ou de forma geral.
+
+**Entradas e saídas.** As entradas do fluxo são o tipo de labirinto escolhido, as amostras de telemetria do robô e o filtro de consulta. As saídas são os comandos enviados ao robô, os seis dados exibidos em tempo real, a execução armazenada e o histórico consultado. Os tempos limite de confirmação e os casos alternativos de interrupção estão detalhados no diagrama de sequência (Figura 5).
+
+
+
+#### 6. Diagrama de sequência do ciclo de execução
+
+A Figura 5 detalha a ordem das mensagens entre o usuário, o frontend, o backend, o broker e o robô. O início só é confirmado após `run.started`; a interrupção só é concluída após `run.interrupted`. O caminho alternativo mostra o caso de o robô concluir a tentativa enquanto a interrupção está pendente.
+
+Figura 5 – Diagrama de sequência do ciclo de uma tentativa
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuário
+    participant F as Frontend React
+    participant C as RunController
+    participant S as RunService
+    participant M as Mosquitto
+    participant R as Robô Rato Cego
+    participant T as TelemetryMqttListener
+    participant W as WebSocketTelemetryAdapter
+
+    U->>F: Seleciona o tipo de labirinto e solicita início
+    F->>C: POST /api/runs {mazeType}
+    C->>S: startRun(request)
+    S->>S: Verifica tentativa ativa e gera runId
+    S->>M: Publica run.start (runId, mazeType)
+    S-->>W: RUN_START_REQUESTED
+    W-->>F: Estado START_REQUESTED
+    M->>R: Entrega comando run.start
+    alt Robô confirma o início
+        R->>M: Publica run.started (runId)
+        M->>T: Entrega confirmação de início
+        T->>S: confirmRunStarted(payload)
+        S->>S: Define IN_PROGRESS e inicia cronômetro
+        S-->>W: RUN_STARTED
+        W-->>F: Estado IN_PROGRESS
+
+        loop Durante a tentativa
+            R->>M: Publica telemetry.sample (runId, sequence, dados)
+            M->>T: Entrega amostra
+            T->>S: processSample(payload)
+            S-->>W: TELEMETRY_UPDATE
+            W-->>F: Atualiza telemetria e trajeto
+        end
+
+        U->>F: Solicita interrupção
+        F->>C: POST /api/runs/{runId}/interrupt
+        C->>S: requestInterruption(runId)
+        S->>S: Define INTERRUPT_REQUESTED
+        S->>M: Publica run.interrupt (runId)
+        S-->>W: RUN_INTERRUPT_REQUESTED
+        W-->>F: Interrupção solicitada, aguardando robô
+        M->>R: Entrega comando run.interrupt
+
+        alt Robô confirma a interrupção
+            R->>M: Publica run.interrupted (runId)
+            M->>T: Entrega confirmação
+            T->>S: confirmRunInterrupted(payload)
+            S->>S: Define INTERRUPTED e persiste dados parciais
+            S-->>W: RUN_INTERRUPTED
+            W-->>F: Interrupção confirmada
+        else Robô termina antes da interrupção
+            R->>M: Publica run.finished (runId, resultado)
+            M->>T: Entrega evento de término
+            T->>S: finishRun(payload)
+            S->>S: Registra resultado final
+            S-->>W: RUN_FINISHED
+            W-->>F: Exibe resultado final
+        else Confirmação de interrupção não chega em 2 segundos
+            S-->>W: RUN_INTERRUPT_REQUESTED com detalhe de não confirmação
+            W-->>F: Mantém estado pendente e informa que a parada não foi confirmada
+        end
+    else Confirmação de início não chega em 5 segundos
+        S->>S: Define FAILED
+        S-->>W: RUN_START_FAILED
+        W-->>F: Informa falha, tentativa não aparece como iniciada
+    end
+```
+
+Fonte: Elaborado pelos autores (2026).
 
 ### 7. Visão lógica e diagrama de classes UML
 
@@ -174,7 +159,7 @@ A visão lógica organiza os conceitos do domínio e as responsabilidades do bac
 
 Os nomes de classes, interfaces, enums, atributos e métodos no diagrama estão em inglês, conforme a convenção usual de projetos Java. O restante da documentação permanece em português. As entidades de domínio não possuem herança entre si, pois não há comportamento compartilhado que justifique uma superclasse. As implementações dos adaptadores realizam suas interfaces; essa relação é mostrada com a notação UML de realização.
 
-Figura 1 – Diagrama de classes UML do sistema Rato Cego
+Figura 6 – Diagrama de classes UML do sistema Rato Cego
 
 ```mermaid
 classDiagram
@@ -519,7 +504,7 @@ Eventos publicados pelo robô e recebidos pelo backend:
 
 O robô publica `run.started` somente quando tiver aceitado o comando e efetivamente iniciado a tentativa. `run.interrupted` confirma que a navegação foi interrompida; o recebimento do comando pelo broker, por si só, não é confirmação de parada. Se `run.finished` chegar enquanto a interrupção estiver pendente, o evento de término recebido do robô define o resultado final. O backend só processa amostras cujo `runId` corresponda à tentativa atual e que tenham chegado após a confirmação de início; mensagens de outra tentativa ou recebidas após um estado terminal não alteram a execução atual. Uma nova tentativa só pode ser solicitada depois que a anterior estiver em estado terminal. `sequence` começa em 1 e cresce a cada amostra, permitindo detectar duplicatas e lacunas. `row` e `column` usam índices começando em zero; `heading` aceita `NORTH`, `EAST`, `SOUTH` ou `WEST`. `distanceTravelledMeters` contém a distância acumulada desde o início da corrida.
 
-O início é solicitado pelo frontend por `POST /api/runs`, com `mazeType` (`GRID_4X4`, `GRID_8X4` ou `GRID_12X4`). A interrupção é solicitada por `POST /api/runs/{runId}/interrupt`. O primeiro pedido é rejeitado se já houver tentativa ativa; a interrupção só é aceita para a tentativa ativa. O backend publica atualização WebSocket para estados pendentes e confirmados. Os tempos limite de confirmação são configuráveis: ausência de confirmação de início encerra a solicitação em `FAILED`; ausência de confirmação de interrupção mantém `INTERRUPT_REQUESTED` e é apresentada como não confirmada.
+O início é solicitado pelo frontend por `POST /api/runs`, com `mazeType` (`GRID_4X4`, `GRID_8X4` ou `GRID_12X4`). A interrupção é solicitada por `POST /api/runs/{runId}/interrupt`. O primeiro pedido é rejeitado se já houver tentativa ativa; a interrupção só é aceita para a tentativa ativa. O backend publica atualização WebSocket para estados pendentes e confirmados. `run.started` deve ser recebido em até **5 segundos** após o envio do comando; sem confirmação, a solicitação termina em `FAILED`. `run.interrupted` deve ser recebido em até **2 segundos** após o envio do comando; sem confirmação, o sistema mantém `INTERRUPT_REQUESTED` e informa que a parada não foi confirmada.
 
 Exemplo de comando de início publicado pelo backend:
 
@@ -617,7 +602,7 @@ A tensão já é recebida em cada `TelemetrySamplePayload`; portanto, não haver
 
 O estado calculado é incluído em cada `TelemetryUpdate` no campo `batteryStatus`. O frontend exibe um aviso persistente enquanto o valor for `LOW` e o remove quando voltar a `NORMAL`. O aviso não gera registro nem histórico próprio no banco; as amostras de tensão continuam sendo persistidas como parte da telemetria da execução. Os valores dos dois limites devem ser definidos pela equipe de energia/hardware conforme a bateria utilizada e configurados no backend; não se deve fixar valores arbitrários no código.
 
-No início de cada execução, o monitor começa em `NORMAL` e classifica a primeira amostra recebida. Se essa amostra estiver abaixo do limite crítico, o primeiro `TelemetryUpdate` já informa `LOW`. A interface oculta a leitura da bateria e qualquer aviso quando não recebe novas amostras pelo período configurável de timeout, contado desde a última amostra recebida. Quando a telemetria volta a chegar, a interface retoma a exibição com o estado calculado a partir das amostras recebidas. O timeout deve ser configurado conforme a frequência de telemetria definida para a integração.
+No início de cada execução, o monitor começa em `NORMAL` e classifica a primeira amostra recebida. Se essa amostra estiver abaixo do limite crítico, o primeiro `TelemetryUpdate` já informa `LOW`. Se a interface não receber uma amostra por **1 segundo**, mantém a última leitura e o aviso visíveis, mas identificados como desatualizados; não apresenta esses dados como atuais. Quando a telemetria volta a chegar, a interface atualiza a leitura, recalcula o estado e remove a indicação de dado desatualizado.
 
 #### Fronteira com o sistema embarcado
 
@@ -627,156 +612,10 @@ O usuário solicita o início ou a interrupção por `RunController`; `RunServic
 
 `MazeType` é escolhido pelo usuário e enviado no comando de início; dimensões informadas em `run.started` confirmam o labirinto iniciado. `RunStatus` registra solicitações, confirmações e o resultado da execução. Mensagens tardias são associadas pelo `runId` e não podem alterar outra tentativa.
 
-### 8. Visão de implementação e diagrama de componentes UML
-
-O diagrama de componentes (Figura 2) apresenta os módulos previstos e os contratos de comunicação entre eles. O frontend solicita operações pela API REST; o backend publica os comandos pelo broker e recebe do robô confirmações, telemetria e eventos de término. O banco aparece sem tecnologia específica porque essa decisão permanece pendente.
-
-Figura 2 – Diagrama de componentes UML da solução de software
-
-![Diagrama UML de componentes da solução de software, com interfaces e protocolos](./figs/diagrama_componentes_software.svg)
-
-Fonte: Elaborado pelos autores (2026).
-
-Os retângulos representam componentes; os círculos identificam as interfaces `RunCommandPublisher`, `TelemetryPublisher` e `RunRepository`/`MazeRepository`. As setas tracejadas representam dependência ou realização de interface, enquanto as contínuas representam comunicação entre componentes. O frontend solicita apenas início e interrupção de uma tentativa; não envia comandos de movimento nem controla a navegação autônoma. O Mosquitto apenas encaminha mensagens MQTT. As portas de persistência isolam os serviços da tecnologia de banco, que será definida posteriormente.
-
-#### Diagrama de pacotes UML
-
-A Figura 3 apresenta uma organização proposta para os pacotes, com nomes convencionais do ecossistema Spring. Ela ainda não representa a estrutura existente no código: os diretórios de backend e frontend permanecem sem implementação. Os pacotes seguem uma organização em camadas com adaptadores nas bordas: `controller` recebe requisições; `service` concentra os casos de uso e as portas de saída; `model` contém o domínio; `repository` declara as portas de persistência; e `adapter` reúne as integrações concretas. As dependências apontam para as abstrações usadas. O broker, o robô e o banco não aparecem aqui porque são componentes externos, já apresentados na Figura 2.
-
-Figura 3 – Diagrama de pacotes UML da solução de software
-
-![Diagrama UML de pacotes do backend e frontend, com dependências entre pacotes](./figs/diagrama_pacotes_software.svg)
-
-As setas tracejadas com ponta aberta representam dependências UML. `api` depende de `controller` para as operações REST; `realtime` depende de `adapter.websocket` para as atualizações WebSocket. As interfaces `RunCommandPublisher` e `TelemetryPublisher` pertencem ao pacote `service`; `RunRepository` e `MazeRepository` pertencem a `repository`. As implementações concretas ficam nos adaptadores. A tecnologia do adaptador de persistência permanece em aberto até a escolha do banco.
-
-#### Sequência de início, acompanhamento e interrupção
-
-A Figura 4 detalha a ordem das mensagens entre o usuário, o frontend, o backend, o broker e o robô. O início só é confirmado após `run.started`; a interrupção só é concluída após `run.interrupted`. O caminho alternativo mostra o caso de o robô concluir a tentativa enquanto a interrupção está pendente.
-
-Figura 4 – Diagrama de sequência do ciclo de uma tentativa
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor U as Usuário
-    participant F as Frontend React
-    participant C as RunController
-    participant S as RunService
-    participant M as Mosquitto
-    participant R as Robô Rato Cego
-    participant T as TelemetryMqttListener
-    participant W as WebSocketTelemetryAdapter
-
-    U->>F: Seleciona o tipo de labirinto e solicita início
-    F->>C: POST /api/runs {mazeType}
-    C->>S: startRun(request)
-    S->>S: Verifica tentativa ativa e gera runId
-    S->>M: Publica run.start (runId, mazeType)
-    S-->>W: RUN_START_REQUESTED
-    W-->>F: Estado START_REQUESTED
-    M->>R: Entrega comando run.start
-    alt Robô confirma o início
-        R->>M: Publica run.started (runId)
-        M->>T: Entrega confirmação de início
-        T->>S: confirmRunStarted(payload)
-        S->>S: Define IN_PROGRESS e inicia cronômetro
-        S-->>W: RUN_STARTED
-        W-->>F: Estado IN_PROGRESS
-
-        loop Durante a tentativa
-            R->>M: Publica telemetry.sample (runId, sequence, dados)
-            M->>T: Entrega amostra
-            T->>S: processSample(payload)
-            S-->>W: TELEMETRY_UPDATE
-            W-->>F: Atualiza telemetria e trajeto
-        end
-
-        U->>F: Solicita interrupção
-        F->>C: POST /api/runs/{runId}/interrupt
-        C->>S: requestInterruption(runId)
-        S->>S: Define INTERRUPT_REQUESTED
-        S->>M: Publica run.interrupt (runId)
-        S-->>W: RUN_INTERRUPT_REQUESTED
-        W-->>F: Interrupção solicitada, aguardando robô
-        M->>R: Entrega comando run.interrupt
-
-        alt Robô confirma a interrupção
-            R->>M: Publica run.interrupted (runId)
-            M->>T: Entrega confirmação
-            T->>S: confirmRunInterrupted(payload)
-            S->>S: Define INTERRUPTED e persiste dados parciais
-            S-->>W: RUN_INTERRUPTED
-            W-->>F: Interrupção confirmada
-        else Robô termina antes da interrupção
-            R->>M: Publica run.finished (runId, resultado)
-            M->>T: Entrega evento de término
-            T->>S: finishRun(payload)
-            S->>S: Registra resultado final
-            S-->>W: RUN_FINISHED
-            W-->>F: Exibe resultado final
-        else Confirmação de interrupção não chega no tempo configurado
-            S-->>W: RUN_INTERRUPT_REQUESTED com detalhe de não confirmação
-            W-->>F: Mantém estado pendente e informa que a parada não foi confirmada
-        end
-    else Confirmação de início não chega no tempo configurado
-        S->>S: Define FAILED
-        S-->>W: RUN_START_FAILED
-        W-->>F: Informa falha, tentativa não aparece como iniciada
-    end
-```
-
-Fonte: Elaborado pelos autores (2026).
-
-### 9. Protótipo de Baixa Fidelidade
-
-Antes do desenvolvimento do protótipo de alta fidelidade, foi elaborado um protótipo de baixa fidelidade com o objetivo de validar a arquitetura de informação e a navegação entre as páginas do sistema, sem se preocupar ainda com aspectos visuais como cores, tipografia e componentes estilizados. Essa etapa permitiu revisar rapidamente quais dados cada página deveria concentrar antes de investir tempo na fidelidade visual. O protótipo de baixa fidelidade contempla as mesmas quatro páginas definidas para o protótipo funcional:
-
-**1. Página de Monitoramento em Tempo Real:** representa, em blocos, as informações a serem exibidas durante a execução de um teste — tipo de labirinto, estado de conexão, cronômetro, indicador de bateria, velocidade média e status final — além de um espaço reservado para a visualização do trajeto sendo percorrido.
-
-**2. Página de Consulta Geral:** delimita os blocos de métricas agregadas, os filtros de busca e a estrutura da tabela de execuções, sem ainda detalhar sua estilização.
-
-**3. Página de Consulta por Labirinto:** reaproveita a estrutura da consulta geral, delimitando o espaço destinado ao filtro por tipo de labirinto e à miniatura do seu layout.
-
-**4. Página de Detalhe da Execução:** delimita os blocos de identificação da execução, visualização do trajeto final e as métricas específicas daquela tentativa.
-
-<p align="center">
-  <img src="figs/prototipo-de-baixa-fidelidade.png" alt="Wireframe das páginas do sistema">
-</p>
-
-<p align="center"><em>Figura 5 – Wireframes das páginas do sistema web.</em></p>
-
-### 10. Protótipo Funcional
-
-O protótipo funcional foi desenvolvido com base nos requisitos funcionais que envolvem apresentação e interação na interface do sistema web. O protótipo possui quatro páginas principais:
-
-**1. Página de Monitoramento em Tempo Real:** utilizada durante a execução de cada teste, exibe o labirinto sendo mapeado conforme o **Rato Cego** o percorre, além do nível de bateria com alerta visual em caso de nível crítico, tempo decorrido e velocidade média calculada em tempo real. A página também apresenta o controle de início do percurso e seus respectivos estados (aguardando, em execução e concluído). As RFs relacionadas incluem: RF1, RF3, RF12, RF26, RF28, RF29, RF30, RF31, RF32, RF33.
-
-**2. Página de Consulta Geral:** concentra as informações de todos os testes já executados, independentemente do labirinto, fornecendo métricas agregadas (quantidade de testes, taxa de sucesso e consumo médio geral), uma tabela para consulta histórica dos trajetos anteriores e filtros por labirinto e por status da execução. As RFs relacionadas incluem: RF34, RF35, RF37, RNF38.
-
-**3. Página de Consulta por Labirinto:** apresenta a mesma estrutura da consulta geral, porém filtrada a um único tipo de labirinto (4×4, 8×4 ou 12×4), permitindo comparar o desempenho do robô entre diferentes tentativas de um mesmo percurso. A RF relacionada é: RF36.
-
-**4. Página de Detalhe da Execução:** exibe os dados completos de uma execução específica, incluindo o trajeto final percorrido e os valores absolutos de consumo de bateria, tempo total e velocidade média daquela tentativa. As RFs relacionadas incluem: RF26, RNF38.
-
-<p align="center">
-  <img src="figs/pagina-de-monitoramento.png" width="45%" alt="Página de Monitoramento em Tempo Real">
-  <img src="figs/pagina-de-consulta-geral.png" width="45%" alt="Página de Consulta Geral">
-</p>
-
-<p align="center">
-  <img src="figs/pagina-de-consulta-por-labirinto.png" width="45%" alt="Página de Consulta por Labirinto">
-  <img src="figs/pagina-de-detalhe-por-execucao.png" width="45%" alt="Página de Detalhe da Execução">
-</p>
-
-<p align="center"><em>Figura 6 – Páginas de protótipo funcional.</em></p>
-
-<!-- parte laryssa -->
-
-### 11. Visão de dados e escolha do banco
+### 8. Visão de dados e escolha do banco
 Adota-se PostgreSQL como banco de dados relacional local, acessado pelo backend com Spring Data JPA. As relações entre labirinto, tentativa e amostras de telemetria são bem definidas; o modelo relacional permite impor chaves, unicidade e integridade referencial. O PostgreSQL também atende às consultas por tentativa, por tipo de labirinto e ao histórico geral sem acrescentar um serviço externo.
 O Mosquitto transporta mensagens, enquanto o PostgreSQL conserva os dados da aplicação. O frontend consulta o histórico exclusivamente pela API do backend.
-Há uma distinção necessária para o modelo: Maze representa um tipo de labirinto e suas dimensões, como GRID_8X4. As amostras de posição representam o trajeto observado em cada tentativa. 
-<!-- Como o contrato MQTT atual não transmite paredes ou o desenho completo do labirinto, o banco ainda não pode reconstruir seu layout físico completo. A miniatura de layout prevista na interface dependerá de uma definição adicional do desenho de cada labirinto ou de um contrato futuro para transmitir o mapa. -->
-<!-- Com o contrato MQTT atual, o backend recebe posição e orientação por amostra, suficientes para reconstruir o *trajeto observado*; ele não recebe a topologia completa das paredes. Se a interface precisar mostrar paredes descobertas, a equipe de embarcados e a de software terão de definir um evento de mapeamento e sua persistência  -->
+Há uma distinção necessária para o modelo: `Maze` representa um tipo de labirinto e suas dimensões, como `GRID_8X4`. O mapa exibido é uma grade montada a partir desse tipo; as amostras de posição representam o trajeto observado em cada tentativa. A interface não representa paredes detectadas.
 
 **Entidades e atributos**
 
@@ -791,6 +630,8 @@ A posição pode ser incorporada à tabela telemetry_sample, pois seus três atr
 **MER — Modelo Entidade-Relacionamento**
 O Modelo Entidade-Relacionamento (MER) apresenta os principais conceitos de dados do Rato Cego e as relações entre eles. O modelo identifica Labirinto, Execução e Amostra de Telemetria como entidades necessárias para associar cada tentativa ao tipo de labirinto selecionado e registrar o trajeto e as medições produzidas durante a corrida. Nesta visão conceitual, são apresentadas as relações e suas cardinalidades, sem detalhar a estrutura das tabelas do banco de dados.
 
+<p align="center"><em>Figura 7 – Modelo Entidade-Relacionamento (MER).</em></p>
+
 ![Modelo Entidade-Relacionamento](./figs/software_dados/mer.png)
 
 - Um labirinto pode estar associado a várias execuções; cada execução pertence a um labirinto.
@@ -801,7 +642,7 @@ Neste modelo, Labirinto representa o tipo cadastrado ( 4×4 , 8×4 ou 12×4 ), e
 **DER — Diagrama Entidade-Relacionamento**
 O Diagrama Entidade-Relacionamento (DER) detalha a estrutura de dados proposta para o PostgreSQL a partir das entidades definidas no MER. Ele apresenta os atributos de Labirinto, Execução e Amostra de Telemetria, suas chaves primárias e estrangeiras e as restrições necessárias para manter a integridade dos registros. Essa estrutura permite armazenar os resultados das tentativas e consultar tanto o histórico geral quanto as execuções de um labirinto específico.
 
-<p align="center"><em>Figura 8 – Diagrama Entidade-Relacionamentol.</em></p>
+<p align="center"><em>Figura 8 – Diagrama Entidade-Relacionamento (DER).</em></p>
 
 ![Diagrama Entidade-Relacionamento](figs/software_dados/der.svg)
 
@@ -809,7 +650,51 @@ Uma tentativa pertence a um tipo de labirinto; um tipo de labirinto pode ter vá
 
 Os índices propostos são `run(maze_id, requested_at)`, `run(status)` e `telemetry_sample(run_id, sequence)`. A duração é derivada de `started_at` e `finished_at`, portanto não precisa ser armazenada em uma coluna adicional. O banco deve preservar também tentativas com status `FAILED` e `INTERRUPTED`. Quando o resultado do desafio for desconhecido, `challenge_completed` pode ser `NULL`.
 
-### 12. Processos e regras de tratamento
+### 9. Protótipo de Baixa Fidelidade
+
+Antes do desenvolvimento do protótipo de alta fidelidade, foi elaborado um protótipo de baixa fidelidade com o objetivo de validar a arquitetura de informação e a navegação entre as páginas do sistema, sem se preocupar ainda com aspectos visuais como cores, tipografia e componentes estilizados. Essa etapa permitiu revisar rapidamente quais dados cada página deveria concentrar antes de investir tempo na fidelidade visual. O protótipo de baixa fidelidade contempla as mesmas quatro páginas definidas para o protótipo funcional:
+
+**1. Página de Monitoramento em Tempo Real:** utilizada durante a execução, exibe o mapa em grade do labirinto com o trajeto percorrido, sem representar paredes detectadas. Também mostra o nível de bateria, alerta visual, tempo decorrido, velocidade média, estado da conexão e resultado, e permite selecionar o labirinto, preparar, iniciar, reiniciar e solicitar a interrupção da execução. As RFs relacionadas incluem: RF16, RF18, RF26–RF44.
+
+**2. Página de Consulta Geral:** concentra as execuções armazenadas, com métricas agregadas, tabela de histórico e filtros por labirinto e status. As RFs relacionadas incluem: RF48–RF52.
+
+**3. Página de Consulta por Labirinto:** apresenta o histórico e permite comparar tentativas de um tipo de labirinto. A RF relacionada é: RF50.
+
+**4. Página de Detalhe da Execução:** exibe os dados armazenados de uma execução, incluindo o trajeto final e as métricas de consumo, duração e velocidade média. As RFs relacionadas incluem: RF36, RF48–RF49.
+
+<p align="center">
+  <img src="figs/prototipo-de-baixa-fidelidade.png" alt="Wireframe das páginas do sistema">
+</p>
+
+<p align="center"><em>Figura 9 – Wireframes das páginas do sistema web.</em></p>
+
+### 10. Protótipo Funcional
+
+O protótipo funcional foi desenvolvido com base nos requisitos funcionais que envolvem apresentação e interação na interface do sistema web. O protótipo possui quatro páginas principais:
+
+**1. Página de Monitoramento em Tempo Real:** utilizada durante a execução, exibe o mapa em grade do labirinto com o trajeto percorrido, sem representar paredes detectadas. Também mostra o nível de bateria, alerta visual, tempo decorrido, velocidade média, estado da conexão e resultado, e permite selecionar o labirinto, preparar, iniciar, reiniciar e solicitar a interrupção da execução. As RFs relacionadas incluem: RF16, RF18, RF26–RF44.
+
+**2. Página de Consulta Geral:** concentra as execuções armazenadas, com métricas agregadas, tabela de histórico e filtros por labirinto e status. As RFs relacionadas incluem: RF48–RF52.
+
+**3. Página de Consulta por Labirinto:** apresenta o histórico e permite comparar tentativas de um tipo de labirinto. A RF relacionada é: RF50.
+
+**4. Página de Detalhe da Execução:** exibe os dados armazenados de uma execução, incluindo o trajeto final e as métricas de consumo, duração e velocidade média. As RFs relacionadas incluem: RF36, RF48–RF49.
+
+<p align="center">
+  <img src="figs/pagina-de-monitoramento.png" width="45%" alt="Página de Monitoramento em Tempo Real">
+  <img src="figs/pagina-de-consulta-geral.png" width="45%" alt="Página de Consulta Geral">
+</p>
+
+<p align="center">
+  <img src="figs/pagina-de-consulta-por-labirinto.png" width="45%" alt="Página de Consulta por Labirinto">
+  <img src="figs/pagina-de-detalhe-por-execucao.png" width="45%" alt="Página de Detalhe da Execução">
+</p>
+
+<p align="center"><em>Figura 10 – Páginas de protótipo funcional.</em></p>
+
+<!-- parte laryssa -->
+
+### 11. Processos e regras de tratamento
 
 **Início da tentativa:** O frontend envia `POST /api/runs` com `mazeType`. O backend valida o tipo de labirinto, impede a criação de outra tentativa enquanto houver uma tentativa não terminal, cria um registro `Run` com status `START_REQUESTED` e publica `run.start` com o `runId`. A resposta HTTP informa o estado pendente. Ao receber `run.started` com o mesmo identificador e dimensões compatíveis com o tipo escolhido, o backend registra `started_at`, muda o status para `IN_PROGRESS` e comunica a confirmação por WebSocket. Se o prazo configurado expirar sem confirmação, registra `FAILED`.
 
@@ -823,58 +708,7 @@ A potência instantânea em watts é calculada multiplicando a tensão pela corr
 
 **Consultas:** A API fornece a lista geral de tentativas, a lista filtrada por labirinto e o detalhe de uma tentativa. Na consulta de detalhe, recupera também as amostras ordenadas para desenhar o trajeto. A tela de monitoramento usa WebSocket durante a execução e pode consultar o estado atual via REST ao abrir ou reconectar, evitando depender de eventos WebSocket enviados antes da conexão.
 
-### 13. Comunicação entre componentes
-
-| Origem → destino | Protocolo | Dados ou operação |
-|---|---|---|
-| Navegador → frontend local | HTTP | Carregamento da aplicação React. |
-| Frontend → backend | HTTP/REST | Início, solicitação de interrupção e consultas históricas. |
-| Frontend ↔ backend | WebSocket | Conexão para receber estados e telemetria ao vivo. |
-| Backend → Mosquitto → robô | MQTT | Comandos `run.start` e `run.interrupt`. |
-| Robô → Mosquitto → backend | MQTT | `run.started`, `telemetry.sample`, `run.finished` e `run.interrupted`. |
-| Backend ↔ PostgreSQL | Protocolo PostgreSQL | Gravação e consulta de tentativas e amostras. |
-
-### 14. Visão e diagrama de implantação
-Todos os serviços de software residem no mesmo computador local . O robô é o único nó separado e alcança o Mosquitto pela rede local. O navegador pode rodar nesse computador; para outro dispositivo acessar uma interface, seria necessário configurar a exposição das portas HTTP e WebSocket na rede.
-
-<p align="center"><em>Diagrama de Implantação.</em></p>
-
-<p 
-  <img src="figs/software_dados/implantacao.svg" alt="Modelo Entidade-Relacionamento">
-</p>
-
-
-![Diagrama de Implantação](figs/software_dados/implantacao.svg)
-
-O contêiner do Mosquitto monta o arquivo de configuração e, se habilitados, diretórios persistentes de dados e logs. O PostgreSQL utiliza armazenamento persistente para que reinícios de processos não apaguem o histórico. O backend inicia com a conexão ao banco e às configurações da corretora; o frontend recebe o endereço local da API e do WebSocket. A porta 1883 precisa ser acessível ao robô na rede local; As demais portas podem ser restritas ao computador quando a interface é usada apenas nele. A solução opera sem Internet, desde que computador, robô e rede local estão disponíveis.
-
-
-### 15. Diagrama de atividades UML
-
-O diagrama de atividades (Figura 9) descreve o comportamento funcional do sistema durante uma tentativa, da seleção do labirinto à consulta do histórico. Ele é organizado em quatro raias: **Usuário** (equipe que opera o sistema), **Frontend** (interface web), **Backend** (aplicação Spring Boot) e **Robô** (firmware do Rato Cego). A comunicação entre Backend e Robô passa pelo broker Mosquitto (MQTT), que apenas encaminha mensagens e, por isso, não é representado como raia.
-
-Figura 9 – Diagrama de atividades UML do ciclo de uma tentativa
-
-![Diagrama de atividades UML do ciclo de uma tentativa](./figs/diagrama_atividades_software.svg)
-
-
-Fonte: Elaborado pelos autores (2026).
-
-**Início da tentativa.** O usuário seleciona o tipo de labirinto e solicita o início. O backend verifica se já existe uma tentativa ativa: em caso positivo, o pedido é rejeitado; caso contrário, gera o `runId`, registra `START_REQUESTED` e publica o comando de início. O robô inicia a navegação e publica a confirmação. Se ela não chegar no tempo configurado, a tentativa é registrada como `FAILED`; se chegar, passa a `IN_PROGRESS` e a contagem do tempo começa.
-
-**Execução em paralelo.** A partir desse ponto, uma barra de bifurcação divide o fluxo em quatro atividades simultâneas:
-- o robô repete o ciclo de identificar paredes, atualizar posição e trajeto, executar o próximo movimento e publicar telemetria;
-- o backend valida cada amostra, calcula tempo, velocidade média e consumo, classifica o estado da bateria, persiste os dados e envia a atualização;
-- o frontend exibe os seis dados obrigatórios e o trajeto, além do aviso de bateria baixa quando o estado for `LOW`;
-- o usuário acompanha a corrida e pode solicitar a interrupção.
-
-**Encerramento.** O ciclo do robô termina quando ele alcança o objetivo, publicando o término com o resultado do desafio, ou quando recebe a interrupção, publicando a confirmação de parada. A barra de junção sincroniza os fluxos; o backend registra o resultado final e persiste a execução associada ao labirinto, e o frontend exibe o resumo. Por fim, o usuário pode consultar o histórico por labirinto específico ou de forma geral.
-
-**Entradas e saídas.** As entradas do fluxo são o tipo de labirinto escolhido, as amostras de telemetria do robô e o filtro de consulta. As saídas são os comandos enviados ao robô, os seis dados exibidos em tempo real, a execução armazenada e o histórico consultado. Os tempos limite de confirmação e os casos alternativos de interrupção estão detalhados no diagrama de sequência (Figura 4).
-
-
-
-### 16. Roteiro de testes funcionais
+### 12. Roteiro de testes funcionais
 
 Os casos de teste abaixo cobrem os requisitos de software e estão relacionados às páginas do protótipo funcional. Os testes de firmware são executados com o robô no labirinto; os testes do sistema web podem usar mensagens MQTT simuladas publicadas no Mosquitto, conforme previsto na arquitetura.
 
@@ -884,7 +718,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-01 |
 | Nome | Identificação de paredes |
-| Rastreabilidade | RF21, RNF29, RNF30, RNF37 |
+| Rastreabilidade | RF20, RNF29, RNF30, RNF37 |
 | Objetivo | Verificar se o firmware identifica paredes a partir dos sensores. |
 | Pré-condições | Firmware gravado no ESP32; robô dentro de uma célula do labirinto. |
 | Procedimentos | 1. Posicionar paredes à frente, à esquerda e à direita, uma de cada vez. 2. Repetir sem paredes. 3. Comparar o identificado com o montado. |
@@ -896,7 +730,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-02 |
 | Nome | Localização, deslocamento e registro do trajeto |
-| Rastreabilidade | RF22, RF26,  RF35, RF54|
+| Rastreabilidade | RF21, RF25,  RF34, RF53|
 | Objetivo | Verificar se a posição do robô é acompanhada com base nos encoders e se o trajeto é registrado. |
 | Pré-condições | Tentativa em andamento; backend recebendo telemetria. |
 | Procedimentos | 1. Anotar as células percorridas pelo robô. 2. Comparar com o trajeto exibido na Página de Monitoramento em Tempo Real. 3. Após o término, comparar com o trajeto final da Página de Detalhe da Execução. |
@@ -908,7 +742,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-03 |
 | Nome | Navegação autônoma e identificação do objetivo |
-| Rastreabilidade | RF23, RF24, RF25, RNF27, RNF28  |
+| Rastreabilidade | RF22, RF23, RF24, RNF27, RNF28  |
 | Objetivo | Verificar se o robô resolve o labirinto sozinho e reconhece o objetivo. |
 | Pré-condições | Labirinto montado; robô na largada. |
 | Procedimentos | 1. Iniciar a tentativa. 2. Acompanhar sem intervenção humana até o fim. 3. Repetir nos labirintos 4×4, 8×4 e 12×4. |
@@ -920,7 +754,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-04 |
 | Nome | Seleção, preparação e início da execução |
-| Rastreabilidade | RF27, RF28, RF29, RF31 |
+| Rastreabilidade | RF26, RF27, RF28, RF30 |
 | Objetivo | Verificar se o operador seleciona o labirinto e inicia uma execução, e se o sistema impede duas execuções ao mesmo tempo. |
 | Pré-condições | Mosquitto, backend e frontend em execução; Página de Monitoramento em Tempo Real aberta. |
 | Procedimentos | 1. Selecionar um tipo de labirinto e solicitar o início. 2. Com a execução em andamento, solicitar um novo início. 3. Após a execução terminar, solicitar um novo início. |
@@ -932,7 +766,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-05 |
 | Nome | Interrupção e parada segura |
-| Rastreabilidade | RF30, RF34 |
+| Rastreabilidade | RF29, RF33 |
 | Objetivo | Verificar se o operador interrompe uma execução e se o robô para com segurança. |
 | Pré-condições | Execução em andamento na Página de Monitoramento em Tempo Real. |
 | Procedimentos | 1. Solicitar a interrupção pela interface. 2. Observar o robô. 3. Verificar o estado exibido. |
@@ -944,7 +778,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-06 |
 | Nome | Estados e encerramento automático da execução |
-| Rastreabilidade | RF32, RF33 |
+| Rastreabilidade | RF31, RF32 |
 | Objetivo | Verificar se os estados da execução são exibidos e se o encerramento automático ocorre nas situações previstas. |
 | Pré-condições | Sistema web em execução; Página de Monitoramento em Tempo Real aberta. |
 | Procedimentos | 1. Observar o estado antes de iniciar. 2. Iniciar e observar o estado durante a corrida. 3. Deixar o robô alcançar o objetivo. 4. Iniciar sem que o robô confirme o início. 5. Manter uma execução até atingir o tempo máximo. |
@@ -957,7 +791,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-07 |
 | Nome | Recepção e integridade da telemetria |
-| Rastreabilidade | RF36, RF46, RF48, RNF35, RNF36, RNF38, RNF39 |
+| Rastreabilidade | RF35, RF45, RF47, RNF35, RNF36, RNF38, RNF39 |
 | Objetivo | Verificar se a telemetria chega ao sistema web sem alteração e se mensagens inválidas são descartadas. |
 | Pré-condições | Mosquitto, backend e frontend em execução; execução em andamento. |
 | Procedimentos | 1. Publicar amostras de telemetria válidas. 2. Comparar os valores exibidos com os enviados. 3. Publicar uma mensagem inválida (formato incorreto ou de outra execução). |
@@ -969,7 +803,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-08 |
 | Nome | Exibição dos seis dados obrigatórios |
-| Rastreabilidade | RF37, RF38, RF39, RF40, RF41, RF17, RF19, RNF41 |
+| Rastreabilidade | RF36, RF37, RF38, RF39, RF40, RF16, RF18, RNF41 |
 | Objetivo | Verificar se os seis dados aparecem separados e atualizados na Página de Monitoramento em Tempo Real. |
 | Pré-condições | Tentativa em andamento na Página de Monitoramento em Tempo Real. |
 | Procedimentos | 1. Verificar se o tipo do labirinto exibido é o selecionado. 2. Verificar se o trajeto é atualizado a cada nova posição. 3. Verificar se o consumo de bateria é atualizado a cada amostra. 4. Verificar se o tempo é contabilizado durante a corrida. 5. Verificar se a velocidade média é exibida e atualizada. 6. Enviar tensão abaixo do nível crítico e verificar o alerta de bateria. 7. Ao fim, verificar se é informado se o desafio foi cumprido (S/N). |
@@ -981,7 +815,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-09 |
 | Nome | Conexão, perda e reconexão WebSocket |
-| Rastreabilidade | RF42, RF43, RF44, RF45, RNF31, RNF32 |
+| Rastreabilidade | RF41, RF42, RF43, RF44, RNF31, RNF32 |
 | Objetivo | Verificar se a interface se conecta, detecta a perda de conexão, avisa o operador e reconecta sozinha. |
 | Pré-condições | Backend em execução; Página de Monitoramento em Tempo Real aberta. |
 | Procedimentos | 1. Abrir a página e verificar a conexão. 2. Interromper o backend durante uma execução. 3. Observar a interface. 4. Restaurar o backend. |
@@ -993,7 +827,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-10 |
 | Nome | Perda e reconexão MQTT |
-| Rastreabilidade | RF47, RF45, RNF33, RNF34 |
+| Rastreabilidade | RF45, RF46, RNF33, RNF34 |
 | Objetivo | Verificar se o sistema detecta a perda do broker MQTT e se reconecta automaticamente. |
 | Pré-condições | Mosquitto, backend e frontend em execução. |
 | Procedimentos | 1. Interromper o Mosquitto. 2. Observar o backend e a interface. 3. Restaurar o Mosquitto. 4. Publicar nova amostra de telemetria. |
@@ -1017,7 +851,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-12 |
 | Nome | Armazenamento e associação ao labirinto |
-| Rastreabilidade | RF49, RF50, RNF44, RNF45 |
+| Rastreabilidade | RF48, RF49, RNF44, RNF45 |
 | Objetivo | Verificar se a execução é salva e vinculada ao labirinto correto. |
 | Pré-condições | Banco de dados em execução. |
 | Procedimentos | 1. Concluir uma tentativa em 4×4 e outra em 8×4. 2. Localizar as duas na Página de Consulta Geral. 3. Abrir cada uma na Página de Detalhe da Execução. |
@@ -1029,7 +863,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-13 |
 | Nome | Consulta por labirinto e geral |
-| Rastreabilidade | RF51, RF52 |
+| Rastreabilidade | RF50, RF51 |
 | Objetivo | Verificar as consultas do histórico. |
 | Pré-condições | Banco com execuções em mais de um labirinto. |
 | Procedimentos | 1. Na Página de Consulta por Labirinto, selecionar um labirinto. 2. Na Página de Consulta Geral, consultar todas as execuções. |
@@ -1041,7 +875,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-14 |
 | Nome | Registro de falhas da execução |
-| Rastreabilidade | RF53 |
+| Rastreabilidade | RF52 |
 | Objetivo | Verificar se execuções encerradas por falha, timeout ou interrupção ficam registradas. |
 | Pré-condições | Banco de dados em execução. |
 | Procedimentos | 1. Provocar uma falha de início (robô não confirma). 2. Interromper uma execução em andamento. 3. Consultar as duas na Página de Consulta Geral. |
@@ -1053,7 +887,7 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-15 |
 | Nome | Calibração dos sensores |
-| Rastreabilidade | RF55 |
+| Rastreabilidade | RF54 |
 | Objetivo | Verificar se os sensores podem ser calibrados antes da operação. |
 | Pré-condições | Procedimento de calibração definido pelo projeto; robô no labirinto. |
 | Procedimentos | 1. Executar o procedimento de calibração. 2. Repetir o CT-01. |
@@ -1065,37 +899,270 @@ Os casos de teste abaixo cobrem os requisitos de software e estão relacionados 
 |---|---|
 | Código | CT-16 |
 | Nome | Sinalização do ciclo de recarga |
-| Rastreabilidade | RF56 |
+| Rastreabilidade | RF55 |
 | Objetivo | Verificar se o robô indica visualmente o estado da recarga. |
 | Pré-condições |  Bateria parcialmente descarregada; carregador disponível. |
 | Procedimentos | 1. Conectar o carregador e observar a sinalização. 2. Observar novamente ao fim da carga.  |
 | Resultado esperado | A sinalização muda conforme o estado do ciclo de carregamento. |
 
 
-### Matriz de rastreabilidade
+### 13. Matriz de rastreabilidade
 
 Tabela 1 – Matriz de rastreabilidade entre requisitos, protótipo e casos de teste
 
 | Requisito | HU | Página do protótipo | Caso de teste |
 |---|---|---|---| 
-| RF21 | HU21 | (firmware) | CT-01 |
-| RF22, RF26 | HU22, HU26 | Monitoramento em Tempo Real; Detalhe da Execução | CT-02 |
-| RF35, RF54 | HU35, HU54 | (firmware) | CT-02 |
-| RF23, RF24, RF25 | HU23, HU24, HU25 | (firmware) | CT-03 |
-| RF27, RF28, RF29, RF31 | HU27, HU28, HU29, HU31 | Monitoramento em Tempo Real | CT-04 |
-| RF30, RF34 | HU30, HU34 | Monitoramento em Tempo Real | CT-05 |
-| RF32, RF33 | HU32, HU33 | Monitoramento em Tempo Real | CT-06 |
-| RF36, RF46, RF48 | HU36, HU46, HU48 | Monitoramento em Tempo Real | CT-07 |
-| RF37 a RF41, RF17, RF19 | HU37 a HU41, HU17, HU19 | Monitoramento em Tempo Real | CT-08 |
-| RF42, RF43, RF44, RF45 | HU42, HU43, HU44, HU45 | Monitoramento em Tempo Real | CT-09 |
-| RF47 | HU47 | Monitoramento em Tempo Real | CT-10 |
-| RF49, RF50 | HU49, HU50 | Consulta Geral; Detalhe da Execução | CT-12 |
-| RF51 | HU51 | Consulta por Labirinto | CT-13 |
-| RF52 | HU52 | Consulta Geral | CT-13 |
-| RF53 | HU53 | Consulta Geral | CT-14 |
-| RF55 | HU55 | (firmware) | CT-15 |
-| RF56 | HU56 | (firmware) | CT-16 |
+| RF20 | HU20 | (firmware) | CT-01 |
+| RF21, RF25 | HU21, HU25 | Monitoramento em Tempo Real; Detalhe da Execução | CT-02 |
+| RF34, RF53 | HU34, HU53 | (firmware) | CT-02 |
+| RF22, RF23, RF24 | HU22, HU23, HU24 | (firmware) | CT-03 |
+| RF26, RF27, RF28, RF30 | HU26, HU27, HU28, HU30 | Monitoramento em Tempo Real | CT-04 |
+| RF29, RF33 | HU29, HU33 | Monitoramento em Tempo Real | CT-05 |
+| RF31, RF32 | HU31, HU32 | Monitoramento em Tempo Real | CT-06 |
+| RF35, RF45, RF47 | HU35, HU45, HU47 | Monitoramento em Tempo Real | CT-07 |
+| RF36 a RF40, RF16, RF18 | HU36 a HU40, HU16, HU18 | Monitoramento em Tempo Real | CT-08 |
+| RF41, RF42, RF43, RF44 | HU41, HU42, HU43, HU44 | Monitoramento em Tempo Real | CT-09 |
+| RF46 | HU46 | Monitoramento em Tempo Real | CT-10 |
+| RF48, RF49 | HU48, HU49 | Consulta Geral; Detalhe da Execução | CT-12 |
+| RF50 | HU50 | Consulta por Labirinto | CT-13 |
+| RF51 | HU51 | Consulta Geral | CT-13 |
+| RF52 | HU52 | Consulta Geral | CT-14 |
+| RF54 | HU54 | (firmware) | CT-15 |
+| RF55 | HU55 | (firmware) | CT-16 |
 | RNF40, RNF42 | - | Todas as páginas | CT-11 |
 | RNF43 | - | - | Verificação por inspeção da arquitetura |
 
 Fonte: Elaborado pelos autores (2026).
+
+## Backlog do Produto
+
+O backlog do produto é acompanhado no [GitHub Projects](https://github.com/orgs/fcte-pi1/projects/59). As histórias detalhadas, critérios de aceitação e protótipos vinculados estão nas issues de HU. A especificação completa de RFs e RNFs está em [Requisitos](Requisitos.md).
+
+### Histórias de Usuário
+
+Este documento apresenta as **Histórias de Usuário (HUs)** do projeto **Micromouse**, elaboradas a partir dos Requisitos Funcionais (RFs) definidos para o sistema. Os requisitos atuais definem 55 RFs, representados aqui por 55 histórias para facilitar a rastreabilidade.
+
+As histórias representam resultados para operadores e integrantes da equipe responsáveis por desenvolver, integrar e manter o sistema. Quando o requisito descreve uma capacidade interna, a história identifica esse papel responsável, sem tratar o próprio sistema ou um componente como usuário humano.
+
+Cada RF possui uma HU correspondente nesta versão. Essa relação 1:1 é uma escolha de rastreabilidade para o escopo atual, não uma regra geral de decomposição: se um RF vier a exigir resultados independentes, poderá ser relacionado a mais de uma HU sem alterar o requisito. Os Requisitos Não Funcionais (RNFs) não possuem HUs próprias; são restrições e condições de qualidade associadas às histórias que ajudam a satisfazê-los. A cobertura e as associações devem ser confirmadas nos critérios de aceitação das issues.
+
+Os **critérios de aceitação** de cada História de Usuário serão definidos posteriormente nas respectivas **Issues** do projeto.
+
+---
+
+## Organização das Histórias de Usuário
+
+As HUs estão organizadas segundo os sete agrupamentos usados em `Requisitos.md`, para manter a correspondência com a organização dos RFs. Alguns agrupamentos são transversais ou reúnem capacidades próximas por conveniência de rastreabilidade; a classificação não implica que toda HU do grupo pertença a um único subsistema técnico.
+
+| Épico | Descrição | HUs |
+|---|---|---|
+| **ÉPICO 1** | Estrutura do Micromouse | HU01–HU08 |
+| **ÉPICO 2** | Hardware e Sensoriamento | HU09–HU15 |
+| **ÉPICO 3** | Alimentação e Energia | HU16–HU19 |
+| **ÉPICO 4** | Navegação e Controle | HU20–HU34 |
+| **ÉPICO 5** | Sistema Web e Telemetria | HU35–HU47 |
+| **ÉPICO 6** | Banco de Dados e Histórico | HU48–HU52 |
+| **ÉPICO 7** | Integração e Validação | HU53–HU55 |
+
+### Prioridades
+
+As prioridades utilizadas nas histórias são:
+
+- **Must** — funcionalidade essencial para o funcionamento do sistema.
+- **Should** — funcionalidade importante, mas que pode ser implementada posteriormente caso necessário.
+- **Could** — funcionalidade desejável, mas de menor prioridade.
+
+### Delimitação entre histórias relacionadas
+
+- **HU09 e HU20:** HU09 cobre a amostragem do ambiente pelos sensores e a detecção de paredes e aberturas; HU20 cobre a interpretação dessas leituras pelo software para representar quais paredes estão presentes.
+- **HU10, HU22 e HU23:** HU10 cobre a execução embarcada local e a manutenção das informações necessárias; HU22 cobre a decisão dos próximos movimentos; HU23 cobre a execução autônoma do percurso sem intervenção humana após o início.
+- **HU14 e HU35:** HU14 cobre a transmissão sem fio a partir do Micromouse; HU35 cobre a recepção e disponibilização dos dados na aplicação web.
+- **HU16, HU18 e HU37:** HU16 cobre a coleta e associação dos dados energéticos à execução; HU18 cobre o aviso de bateria baixa; HU37 cobre a visualização da condição e do consumo na interface.
+- **HU25, HU36 e HU48:** HU25 cobre o registro do trajeto durante a execução; HU36 cobre sua visualização durante o percurso; HU48 cobre o armazenamento dos dados da execução após o percurso.
+- **HU34 e HU53:** HU34 cobre a obtenção de medidas de deslocamento e velocidade pelos encoders; HU53 cobre o uso dessas medidas para auxiliar o controle e corrigir a movimentação.
+
+---
+
+#### ÉPICO 1 — Estrutura do Micromouse
+
+Este épico reúne as histórias relacionadas à construção física do Micromouse, incluindo proteção, fixação, modularidade, organização dos componentes, cabeamento e acesso aos elementos internos e externos.
+
+| HU | História de Usuário | RF relacionado | Prioridade | RNFs relacionados |
+|---|---|---|---|---|
+| <a id="hu01"></a>**HU01** | **Como** integrante da equipe de desenvolvimento, **quero** que a estrutura do Micromouse proteja seus componentes internos, **para** evitar danos aos componentes eletrônicos durante a operação e possíveis colisões no labirinto. | [RF1](Requisitos.md#rf1) | **Must** | [RNF1](Requisitos.md#rnf1), [RNF4](Requisitos.md#rnf4), [RNF5](Requisitos.md#rnf5), [RNF10](Requisitos.md#rnf10) |
+| <a id="hu02"></a>**HU02** | **Como** integrante da equipe de desenvolvimento, **quero** ter acesso aos componentes internos do Micromouse, **para** realizar inspeções, manutenção, substituições e ajustes sem precisar desmontar completamente o chassi. | [RF2](Requisitos.md#rf2) | **Should** | [RNF12](Requisitos.md#rnf12), [RNF13](Requisitos.md#rnf13) |
+| <a id="hu03"></a>**HU03** | **Como** integrante da equipe de desenvolvimento, **quero** que os subsistemas possuam pontos adequados de fixação, **para** evitar deslocamentos dos componentes durante o funcionamento. | [RF3](Requisitos.md#rf3) | **Must** | [RNF5](Requisitos.md#rnf5), [RNF6](Requisitos.md#rnf6), [RNF8](Requisitos.md#rnf8) |
+| <a id="hu04"></a>**HU04** | **Como** integrante da equipe de desenvolvimento, **quero** que a estrutura seja modular, **para** permitir a substituição ou atualização de módulos sem reconstruir completamente o chassi. | [RF4](Requisitos.md#rf4) | **Should** | [RNF8](Requisitos.md#rnf8), [RNF12](Requisitos.md#rnf12), [RNF13](Requisitos.md#rnf13) |
+| <a id="hu05"></a>**HU05** | **Como** integrante da equipe de desenvolvimento, **quero** que motores, rodas e demais elementos de tração sejam corretamente fixados e alinhados, **para** garantir uma movimentação estável e previsível. | [RF5](Requisitos.md#rf5) | **Must** | [RNF5](Requisitos.md#rnf5), [RNF6](Requisitos.md#rnf6), [RNF7](Requisitos.md#rnf7) |
+| <a id="hu06"></a>**HU06** | **Como** integrante da equipe de desenvolvimento, **quero** que os sensores possuam espaços e pontos de fixação adequados, **para** manter seu posicionamento e orientação corretos durante a navegação. | [RF6](Requisitos.md#rf6) | **Must** | [RNF8](Requisitos.md#rnf8), [RNF13](Requisitos.md#rnf13), [RNF37](Requisitos.md#rnf37) |
+| <a id="hu07"></a>**HU07** | **Como** integrante da equipe de desenvolvimento, **quero** que os cabos sejam organizados e protegidos, **para** evitar interferências com rodas, motores, sensores e demais componentes. | [RF7](Requisitos.md#rf7) | **Must** | [RNF8](Requisitos.md#rnf8), [RNF10](Requisitos.md#rnf10), [RNF15](Requisitos.md#rnf15) |
+| <a id="hu08"></a>**HU08** | **Como** operador, **quero** ter acesso aos interruptores, conectores e interfaces externas, **para** operar e realizar a manutenção do Micromouse sem precisar desmontar sua estrutura. | [RF8](Requisitos.md#rf8) | **Should** | [RNF10](Requisitos.md#rnf10), [RNF12](Requisitos.md#rnf12) |
+
+---
+
+#### ÉPICO 2 — Hardware e Sensoriamento
+
+Este épico reúne as histórias relacionadas aos componentes eletrônicos responsáveis pela percepção do ambiente, processamento embarcado, acionamento dos motores, comunicação, alimentação e interface de operação pela aplicação web.
+
+| HU | História de Usuário | RF relacionado | Prioridade | RNFs relacionados |
+|---|---|---|---|---|
+| <a id="hu09"></a>**HU09** | **Como** integrante da equipe de desenvolvimento, **quero** que o Micromouse amostre continuamente o ambiente e detecte paredes de aproximadamente 5 cm e aberturas nas direções frontal e lateral, **para** fornecer as leituras necessárias à navegação. | [RF9](Requisitos.md#rf9) | **Must** | [RNF17](Requisitos.md#rnf17), [RNF28](Requisitos.md#rnf28), [RNF37](Requisitos.md#rnf37) |
+| <a id="hu10"></a>**HU10** | **Como** integrante da equipe de desenvolvimento, **quero** que o microcontrolador processe localmente as leituras, execute a lógica de controle e navegação e armazene localmente as informações necessárias à navegação, **para** operar sem depender de processamento externo. | [RF10](Requisitos.md#rf10) | **Must** | [RNF17](Requisitos.md#rnf17), [RNF29](Requisitos.md#rnf29), [RNF30](Requisitos.md#rnf30) |
+| <a id="hu11"></a>**HU11** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema converta comandos lógicos em acionamento reversível dos motores e controle contínuo da velocidade por PWM, **para** executar os movimentos necessários durante a navegação. | [RF11](Requisitos.md#rf11) | **Must** | [RNF17](Requisitos.md#rnf17), [RNF23](Requisitos.md#rnf23), [RNF26](Requisitos.md#rnf26) |
+| <a id="hu12"></a>**HU12** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema ajuste diferencialmente os motores durante o deslocamento, **para** manter uma trajetória reta e centralizada entre as paredes. | [RF12](Requisitos.md#rf12) | **Must** | [RNF17](Requisitos.md#rnf17), [RNF37](Requisitos.md#rnf37) |
+| <a id="hu13"></a>**HU13** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema execute curvas de 90° e 180° respeitando as dimensões das células, **para** mudar de direção e percorrer diferentes caminhos do labirinto. | [RF13](Requisitos.md#rf13) | **Must** | [RNF2](Requisitos.md#rnf2), [RNF28](Requisitos.md#rnf28), [RNF29](Requisitos.md#rnf29), [RNF30](Requisitos.md#rnf30) |
+| <a id="hu14"></a>**HU14** | **Como** integrante responsável pela integração, **quero** que o Micromouse transmita sem fio os dados necessários à telemetria durante a execução, **para** que a aplicação de monitoramento possa recebê-los. | [RF14](Requisitos.md#rf14) | **Must** | [RNF31](Requisitos.md#rnf31), [RNF33](Requisitos.md#rnf33), [RNF36](Requisitos.md#rnf36), [RNF39](Requisitos.md#rnf39) |
+| <a id="hu15"></a>**HU15** | **Como** integrante da equipe de desenvolvimento, **quero** que a fonte de energia forneça tensões reguladas e estáveis, **para** garantir o funcionamento adequado dos componentes eletrônicos, sensores e atuadores. | [RF15](Requisitos.md#rf15) | **Must** | [RNF15](Requisitos.md#rnf15), [RNF16](Requisitos.md#rnf16), [RNF23](Requisitos.md#rnf23), [RNF26](Requisitos.md#rnf26) |
+
+---
+
+#### ÉPICO 3 — Alimentação e Energia
+
+Este épico reúne as histórias relacionadas ao fornecimento, monitoramento, isolamento e manutenção da alimentação elétrica do Micromouse.
+
+| HU | História de Usuário | RF relacionado | Prioridade | RNFs relacionados |
+|---|---|---|---|---|
+| <a id="hu16"></a>**HU16** | **Como** operador, **quero** acompanhar os dados de consumo e condição da bateria em tempo real e vinculados à execução correspondente, **para** monitorar o estado energético de cada tentativa. | [RF16](Requisitos.md#rf16) | **Must** | [RNF18](Requisitos.md#rnf18), [RNF21](Requisitos.md#rnf21), [RNF25](Requisitos.md#rnf25) |
+| <a id="hu17"></a>**HU17** | **Como** integrante da equipe de desenvolvimento, **quero** que um interruptor físico acessível desconecte a bateria dos subsistemas, **para** garantir segurança durante transporte, montagem e manutenção. | [RF17](Requisitos.md#rf17) | **Must** | [RNF15](Requisitos.md#rnf15), [RNF24](Requisitos.md#rnf24) |
+| <a id="hu18"></a>**HU18** | **Como** operador, **quero** receber na interface web um aviso quando qualquer célula da bateria atingir o nível crítico definido, **para** agir antes que a descarga alcance uma faixa prejudicial à bateria. | [RF18](Requisitos.md#rf18) | **Must** | [RNF21](Requisitos.md#rnf21), [RNF36](Requisitos.md#rnf36), [RNF38](Requisitos.md#rnf38) |
+| <a id="hu19"></a>**HU19** | **Como** integrante da equipe de desenvolvimento, **quero** remover e reinstalar a bateria sem desmontar o chassi, **para** facilitar sua manutenção e substituição. | [RF19](Requisitos.md#rf19) | **Could** | [RNF12](Requisitos.md#rnf12), [RNF22](Requisitos.md#rnf22), [RNF26](Requisitos.md#rnf26) |
+
+---
+
+#### ÉPICO 4 — Navegação e Controle
+
+Este épico reúne as histórias relacionadas à percepção do labirinto, localização, planejamento e execução do percurso, gerenciamento da execução e controle da movimentação.
+
+| HU | História de Usuário | RF relacionado | Prioridade | RNFs relacionados |
+|---|---|---|---|---|
+| <a id="hu20"></a>**HU20** | **Como** integrante da equipe de desenvolvimento, **quero** que o software classifique como presentes ou ausentes as paredes a partir das leituras dos sensores, **para** disponibilizar essa representação à navegação. | [RF20](Requisitos.md#rf20) | **Must** | [RNF28](Requisitos.md#rnf28), [RNF37](Requisitos.md#rnf37) |
+| <a id="hu21"></a>**HU21** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema acompanhe a posição do Micromouse no labirinto durante a execução, **para** utilizar essa informação na navegação e no registro do percurso. | [RF21](Requisitos.md#rf21) | **Must** | [RNF28](Requisitos.md#rnf28), [RNF29](Requisitos.md#rnf29), [RNF37](Requisitos.md#rnf37) |
+| <a id="hu22"></a>**HU22** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema determine os próximos movimentos com base nas informações do ambiente, **para** decidir o percurso a seguir no labirinto. | [RF22](Requisitos.md#rf22) | **Must** | [RNF27](Requisitos.md#rnf27), [RNF28](Requisitos.md#rnf28), [RNF30](Requisitos.md#rnf30) |
+| <a id="hu23"></a>**HU23** | **Como** operador, **quero** que, uma vez iniciada a execução, o Micromouse percorra o labirinto sem intervenção humana, **para** realizar o desafio de forma autônoma. | [RF23](Requisitos.md#rf23) | **Must** | [RNF27](Requisitos.md#rnf27), [RNF28](Requisitos.md#rnf28), [RNF29](Requisitos.md#rnf29), [RNF30](Requisitos.md#rnf30) |
+| <a id="hu24"></a>**HU24** | **Como** operador, **quero** que o sistema identifique quando o Micromouse alcançar a região objetivo, **para** determinar a conclusão do percurso. | [RF24](Requisitos.md#rf24) | **Must** | [RNF27](Requisitos.md#rnf27), [RNF28](Requisitos.md#rnf28) |
+| <a id="hu25"></a>**HU25** | **Como** operador, **quero** que o trajeto percorrido seja registrado durante cada execução, **para** acompanhá-lo e disponibilizá-lo para consulta posterior. | [RF25](Requisitos.md#rf25) | **Must** | [RNF39](Requisitos.md#rnf39), [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| <a id="hu26"></a>**HU26** | **Como** operador, **quero** selecionar o tipo de labirinto antes da execução, **para** configurar o sistema de acordo com o desafio a ser realizado. | [RF26](Requisitos.md#rf26) | **Must** | [RNF28](Requisitos.md#rnf28), [RNF40](Requisitos.md#rnf40) |
+| <a id="hu27"></a>**HU27** | **Como** operador, **quero** que o sistema verifique as condições necessárias antes de iniciar a execução, **para** evitar o início do percurso quando alguma condição obrigatória estiver indisponível. | [RF27](Requisitos.md#rf27) | **Must** | [RNF18](Requisitos.md#rnf18), [RNF26](Requisitos.md#rnf26), [RNF28](Requisitos.md#rnf28) |
+| <a id="hu28"></a>**HU28** | **Como** operador, **quero** iniciar o percurso pela interface web após a preparação e receber `run.started` em até 5 segundos, **para** saber que a tentativa começou; se não houver confirmação, a tentativa deve ser encerrada como falha de início. | [RF28](Requisitos.md#rf28) | **Must** | [RNF27](Requisitos.md#rnf27) |
+| <a id="hu29"></a>**HU29** | **Como** operador, **quero** solicitar pela interface web a interrupção de uma execução e receber `run.interrupted` em até 2 segundos, **para** saber se a parada foi confirmada; sem confirmação, devo ser informado e o estado deve permanecer pendente. | [RF29](Requisitos.md#rf29) | **Must** | [RNF24](Requisitos.md#rnf24) |
+| <a id="hu30"></a>**HU30** | **Como** operador, **quero** iniciar uma nova execução após a conclusão ou interrupção de uma tentativa, **para** realizar novas tentativas sem precisar reinicializar manualmente todo o sistema. | [RF30](Requisitos.md#rf30) | **Should** | [RNF27](Requisitos.md#rnf27), [RNF44](Requisitos.md#rnf44) |
+| <a id="hu31"></a>**HU31** | **Como** operador, **quero** que o sistema mantenha e disponibilize o estado atual da execução, **para** saber se o Micromouse está aguardando, executando, concluído, interrompido ou em situação de falha ou timeout. | [RF31](Requisitos.md#rf31) | **Must** | [RNF35](Requisitos.md#rnf35), [RNF39](Requisitos.md#rnf39) |
+| <a id="hu32"></a>**HU32** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema encerre automaticamente a execução quando o objetivo for alcançado, o tempo máximo for excedido ou ocorrer uma falha que impeça a continuidade segura, **para** garantir um encerramento definido para cada tentativa. | [RF32](Requisitos.md#rf32) | **Must** | [RNF27](Requisitos.md#rnf27) |
+| <a id="hu33"></a>**HU33** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema interrompa ou limite de forma segura o acionamento dos motores quando houver interrupção ou falha, **para** evitar movimentos inadequados e proteger o Micromouse. | [RF33](Requisitos.md#rf33) | **Must** | [RNF17](Requisitos.md#rnf17), [RNF24](Requisitos.md#rnf24) |
+| <a id="hu34"></a>**HU34** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema use os encoders dos motores para medir deslocamento e velocidade, **para** auxiliar o controle e a navegação. | [RF34](Requisitos.md#rf34) | **Must** | [RNF17](Requisitos.md#rnf17), [RNF29](Requisitos.md#rnf29) |
+
+---
+
+#### ÉPICO 5 — Sistema Web e Telemetria
+
+Este épico reúne as histórias relacionadas à comunicação entre o Micromouse e a aplicação web, transmissão de telemetria, monitoramento da execução, WebSocket e MQTT.
+
+| HU | História de Usuário | RF relacionado | Prioridade | RNFs relacionados |
+|---|---|---|---|---|
+| <a id="hu35"></a>**HU35** | **Como** operador, **quero** que a aplicação web receba e disponibilize a telemetria enviada pelo Micromouse, **para** acompanhar a execução em tempo real. | [RF35](Requisitos.md#rf35) | **Must** | [RNF36](Requisitos.md#rnf36), [RNF38](Requisitos.md#rnf38), [RNF39](Requisitos.md#rnf39) |
+| <a id="hu36"></a>**HU36** | **Como** operador, **quero** visualizar na aplicação web o trajeto realizado pelo Micromouse, **para** acompanhar seu deslocamento durante a execução. | [RF36](Requisitos.md#rf36) | **Must** | [RNF38](Requisitos.md#rnf38), [RNF40](Requisitos.md#rnf40), [RNF41](Requisitos.md#rnf41) |
+| <a id="hu37"></a>**HU37** | **Como** operador, **quero** visualizar na aplicação web a condição e o consumo da bateria, **para** acompanhar o estado energético do Micromouse. | [RF37](Requisitos.md#rf37) | **Must** | [RNF21](Requisitos.md#rnf21), [RNF25](Requisitos.md#rnf25), [RNF38](Requisitos.md#rnf38), [RNF41](Requisitos.md#rnf41) |
+| <a id="hu38"></a>**HU38** | **Como** operador, **quero** acompanhar o tempo de execução na aplicação web, **para** saber a duração do percurso realizado. | [RF38](Requisitos.md#rf38) | **Must** | [RNF27](Requisitos.md#rnf27), [RNF38](Requisitos.md#rnf38), [RNF41](Requisitos.md#rnf41) |
+| <a id="hu39"></a>**HU39** | **Como** operador, **quero** visualizar a velocidade média na aplicação web, **para** acompanhar o desempenho do Micromouse durante a execução. | [RF39](Requisitos.md#rf39) | **Must** | [RNF38](Requisitos.md#rnf38), [RNF39](Requisitos.md#rnf39), [RNF41](Requisitos.md#rnf41) |
+| <a id="hu40"></a>**HU40** | **Como** operador, **quero** visualizar o resultado do desafio na aplicação web, **para** saber se o percurso foi concluído. | [RF40](Requisitos.md#rf40) | **Must** | [RNF41](Requisitos.md#rnf41), [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| <a id="hu41"></a>**HU41** | **Como** integrante responsável pela integração, **quero** que a aplicação web estabeleça uma conexão WebSocket com o serviço de comunicação em tempo real, **para** receber e disponibilizar continuamente as informações da execução. | [RF41](Requisitos.md#rf41) | **Must** | [RNF31](Requisitos.md#rnf31), [RNF36](Requisitos.md#rnf36) |
+| <a id="hu42"></a>**HU42** | **Como** integrante responsável pela integração, **quero** que o sistema detecte a perda ou indisponibilidade do WebSocket e a diferencie de uma telemetria desatualizada, **para** identificar corretamente a condição da comunicação durante uma execução. | [RF42](Requisitos.md#rf42) | **Must** | [RNF31](Requisitos.md#rnf31), [RNF36](Requisitos.md#rnf36) |
+| <a id="hu43"></a>**HU43** | **Como** operador, **quero** que a aplicação tente restabelecer automaticamente o WebSocket enquanto a página de monitoramento estiver aberta, **para** recuperar o acompanhamento após uma perda de conexão. | [RF43](Requisitos.md#rf43) | **Should** | [RNF32](Requisitos.md#rnf32) |
+| <a id="hu44"></a>**HU44** | **Como** operador, **quero** ser informado quando uma comunicação necessária estiver indisponível, **para** saber que os dados podem estar temporariamente indisponíveis. | [RF44](Requisitos.md#rf44) | **Must** | [RNF31](Requisitos.md#rnf31), [RNF32](Requisitos.md#rnf32), [RNF36](Requisitos.md#rnf36) |
+| <a id="hu45"></a>**HU45** | **Como** integrante responsável pela integração, **quero** que os componentes troquem por MQTT as mensagens previstas na arquitetura, **para** viabilizar a comunicação entre as partes do sistema. | [RF45](Requisitos.md#rf45) | **Must** | [RNF33](Requisitos.md#rnf33), [RNF35](Requisitos.md#rnf35) |
+| <a id="hu46"></a>**HU46** | **Como** integrante responsável pela integração, **quero** que o cliente MQTT tente restabelecer automaticamente a conexão após uma perda, **para** recuperar a troca de informações entre os componentes. | [RF46](Requisitos.md#rf46) | **Must** | [RNF33](Requisitos.md#rnf33), [RNF34](Requisitos.md#rnf34) |
+| <a id="hu47"></a>**HU47** | **Como** integrante responsável pela integração, **quero** que as mensagens MQTT sejam recebidas, validadas e processadas conforme o formato definido, **para** impedir que mensagens inválidas sejam usadas pelo sistema. | [RF47](Requisitos.md#rf47) | **Must** | [RNF35](Requisitos.md#rnf35) |
+
+---
+
+#### ÉPICO 6 — Banco de Dados e Histórico
+
+Este épico reúne as histórias relacionadas ao armazenamento, organização e consulta dos dados gerados durante as execuções do Micromouse.
+
+| HU | História de Usuário | RF relacionado | Prioridade | RNFs relacionados |
+|---|---|---|---|---|
+| <a id="hu48"></a>**HU48** | **Como** operador, **quero** que os dados de cada execução sejam armazenados após o percurso, **para** manter um histórico das execuções realizadas. | [RF48](Requisitos.md#rf48) | **Must** | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| <a id="hu49"></a>**HU49** | **Como** operador, **quero** que cada execução armazenada seja associada ao tipo de labirinto utilizado, **para** identificar a configuração correspondente à execução. | [RF49](Requisitos.md#rf49) | **Must** | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| <a id="hu50"></a>**HU50** | **Como** operador, **quero** consultar as execuções de determinado tipo de labirinto, **para** analisar o histórico daquela configuração. | [RF50](Requisitos.md#rf50) | **Must** | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| <a id="hu51"></a>**HU51** | **Como** operador, **quero** consultar os dados de diferentes labirintos e execuções, **para** acessar o histórico geral do sistema. | [RF51](Requisitos.md#rf51) | **Must** | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| <a id="hu52"></a>**HU52** | **Como** operador, **quero** que eventos relevantes que impeçam ou interrompam uma execução sejam registrados, **para** identificar as ocorrências que afetaram o percurso. | [RF52](Requisitos.md#rf52) | **Must** | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+
+---
+
+#### ÉPICO 7 — Integração e Validação
+
+Este épico reúne as histórias relacionadas à integração dos subsistemas e aos procedimentos necessários para garantir o funcionamento adequado do Micromouse.
+
+| HU | História de Usuário | RF relacionado | Prioridade | RNFs relacionados |
+|---|---|---|---|---|
+| <a id="hu53"></a>**HU53** | **Como** integrante da equipe de desenvolvimento, **quero** que o sistema use as medidas de deslocamento dos encoders para auxiliar o controle e o posicionamento, **para** corrigir desvios e melhorar a precisão da movimentação durante a navegação. | [RF53](Requisitos.md#rf53) | **Must** | [RNF17](Requisitos.md#rnf17), [RNF29](Requisitos.md#rnf29) |
+| <a id="hu54"></a>**HU54** | **Como** integrante da equipe de desenvolvimento, **quero** calibrar os sensores antes da operação conforme o procedimento definido, **para** garantir leituras adequadas durante a navegação. | [RF54](Requisitos.md#rf54) | **Should** | [RNF37](Requisitos.md#rnf37) |
+| <a id="hu55"></a>**HU55** | **Como** operador, **quero** que o Micromouse indique visualmente o estado do ciclo de recarga, **para** acompanhar o processo de carregamento. | [RF55](Requisitos.md#rf55) | **Could** | [RNF18](Requisitos.md#rnf18) |
+
+---
+
+#### Matriz de Rastreabilidade
+
+A matriz abaixo apresenta a relação entre cada História de Usuário, seu respectivo Requisito Funcional e os Requisitos Não Funcionais associados.
+
+| HU | RF | RNFs |
+|---|---|---|
+| [HU01](#hu01) | [RF1](Requisitos.md#rf1) | [RNF1](Requisitos.md#rnf1), [RNF4](Requisitos.md#rnf4), [RNF5](Requisitos.md#rnf5), [RNF10](Requisitos.md#rnf10) |
+| [HU02](#hu02) | [RF2](Requisitos.md#rf2) | [RNF12](Requisitos.md#rnf12), [RNF13](Requisitos.md#rnf13) |
+| [HU03](#hu03) | [RF3](Requisitos.md#rf3) | [RNF5](Requisitos.md#rnf5), [RNF6](Requisitos.md#rnf6), [RNF8](Requisitos.md#rnf8) |
+| [HU04](#hu04) | [RF4](Requisitos.md#rf4) | [RNF8](Requisitos.md#rnf8), [RNF12](Requisitos.md#rnf12), [RNF13](Requisitos.md#rnf13) |
+| [HU05](#hu05) | [RF5](Requisitos.md#rf5) | [RNF5](Requisitos.md#rnf5), [RNF6](Requisitos.md#rnf6), [RNF7](Requisitos.md#rnf7) |
+| [HU06](#hu06) | [RF6](Requisitos.md#rf6) | [RNF8](Requisitos.md#rnf8), [RNF13](Requisitos.md#rnf13), [RNF37](Requisitos.md#rnf37) |
+| [HU07](#hu07) | [RF7](Requisitos.md#rf7) | [RNF8](Requisitos.md#rnf8), [RNF10](Requisitos.md#rnf10), [RNF15](Requisitos.md#rnf15) |
+| [HU08](#hu08) | [RF8](Requisitos.md#rf8) | [RNF10](Requisitos.md#rnf10), [RNF12](Requisitos.md#rnf12) |
+| [HU09](#hu09) | [RF9](Requisitos.md#rf9) | [RNF17](Requisitos.md#rnf17), [RNF28](Requisitos.md#rnf28), [RNF37](Requisitos.md#rnf37) |
+| [HU10](#hu10) | [RF10](Requisitos.md#rf10) | [RNF17](Requisitos.md#rnf17), [RNF29](Requisitos.md#rnf29), [RNF30](Requisitos.md#rnf30) |
+| [HU11](#hu11) | [RF11](Requisitos.md#rf11) | [RNF17](Requisitos.md#rnf17), [RNF23](Requisitos.md#rnf23), [RNF26](Requisitos.md#rnf26) |
+| [HU12](#hu12) | [RF12](Requisitos.md#rf12) | [RNF17](Requisitos.md#rnf17), [RNF37](Requisitos.md#rnf37) |
+| [HU13](#hu13) | [RF13](Requisitos.md#rf13) | [RNF2](Requisitos.md#rnf2), [RNF28](Requisitos.md#rnf28), [RNF29](Requisitos.md#rnf29), [RNF30](Requisitos.md#rnf30) |
+| [HU14](#hu14) | [RF14](Requisitos.md#rf14) | [RNF31](Requisitos.md#rnf31), [RNF33](Requisitos.md#rnf33), [RNF36](Requisitos.md#rnf36), [RNF39](Requisitos.md#rnf39) |
+| [HU15](#hu15) | [RF15](Requisitos.md#rf15) | [RNF15](Requisitos.md#rnf15), [RNF16](Requisitos.md#rnf16), [RNF23](Requisitos.md#rnf23), [RNF26](Requisitos.md#rnf26) |
+| [HU16](#hu16) | [RF16](Requisitos.md#rf16) | [RNF18](Requisitos.md#rnf18), [RNF21](Requisitos.md#rnf21), [RNF25](Requisitos.md#rnf25) |
+| [HU17](#hu17) | [RF17](Requisitos.md#rf17) | [RNF15](Requisitos.md#rnf15), [RNF24](Requisitos.md#rnf24) |
+| [HU18](#hu18) | [RF18](Requisitos.md#rf18) | [RNF21](Requisitos.md#rnf21), [RNF36](Requisitos.md#rnf36), [RNF38](Requisitos.md#rnf38) |
+| [HU19](#hu19) | [RF19](Requisitos.md#rf19) | [RNF12](Requisitos.md#rnf12), [RNF22](Requisitos.md#rnf22), [RNF26](Requisitos.md#rnf26) |
+| [HU20](#hu20) | [RF20](Requisitos.md#rf20) | [RNF28](Requisitos.md#rnf28), [RNF37](Requisitos.md#rnf37) |
+| [HU21](#hu21) | [RF21](Requisitos.md#rf21) | [RNF28](Requisitos.md#rnf28), [RNF29](Requisitos.md#rnf29), [RNF37](Requisitos.md#rnf37) |
+| [HU22](#hu22) | [RF22](Requisitos.md#rf22) | [RNF27](Requisitos.md#rnf27), [RNF28](Requisitos.md#rnf28), [RNF30](Requisitos.md#rnf30) |
+| [HU23](#hu23) | [RF23](Requisitos.md#rf23) | [RNF27](Requisitos.md#rnf27), [RNF28](Requisitos.md#rnf28), [RNF29](Requisitos.md#rnf29), [RNF30](Requisitos.md#rnf30) |
+| [HU24](#hu24) | [RF24](Requisitos.md#rf24) | [RNF27](Requisitos.md#rnf27), [RNF28](Requisitos.md#rnf28) |
+| [HU25](#hu25) | [RF25](Requisitos.md#rf25) | [RNF39](Requisitos.md#rnf39), [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| [HU26](#hu26) | [RF26](Requisitos.md#rf26) | [RNF28](Requisitos.md#rnf28), [RNF40](Requisitos.md#rnf40) |
+| [HU27](#hu27) | [RF27](Requisitos.md#rf27) | [RNF18](Requisitos.md#rnf18), [RNF26](Requisitos.md#rnf26), [RNF28](Requisitos.md#rnf28) |
+| [HU28](#hu28) | [RF28](Requisitos.md#rf28) | [RNF27](Requisitos.md#rnf27) |
+| [HU29](#hu29) | [RF29](Requisitos.md#rf29) | [RNF24](Requisitos.md#rnf24) |
+| [HU30](#hu30) | [RF30](Requisitos.md#rf30) | [RNF27](Requisitos.md#rnf27), [RNF44](Requisitos.md#rnf44) |
+| [HU31](#hu31) | [RF31](Requisitos.md#rf31) | [RNF35](Requisitos.md#rnf35), [RNF39](Requisitos.md#rnf39) |
+| [HU32](#hu32) | [RF32](Requisitos.md#rf32) | [RNF27](Requisitos.md#rnf27) |
+| [HU33](#hu33) | [RF33](Requisitos.md#rf33) | [RNF17](Requisitos.md#rnf17), [RNF24](Requisitos.md#rnf24) |
+| [HU34](#hu34) | [RF34](Requisitos.md#rf34) | [RNF17](Requisitos.md#rnf17), [RNF29](Requisitos.md#rnf29) |
+| [HU35](#hu35) | [RF35](Requisitos.md#rf35) | [RNF36](Requisitos.md#rnf36), [RNF38](Requisitos.md#rnf38), [RNF39](Requisitos.md#rnf39) |
+| [HU36](#hu36) | [RF36](Requisitos.md#rf36) | [RNF38](Requisitos.md#rnf38), [RNF40](Requisitos.md#rnf40), [RNF41](Requisitos.md#rnf41) |
+| [HU37](#hu37) | [RF37](Requisitos.md#rf37) | [RNF21](Requisitos.md#rnf21), [RNF25](Requisitos.md#rnf25), [RNF38](Requisitos.md#rnf38), [RNF41](Requisitos.md#rnf41) |
+| [HU38](#hu38) | [RF38](Requisitos.md#rf38) | [RNF27](Requisitos.md#rnf27), [RNF38](Requisitos.md#rnf38), [RNF41](Requisitos.md#rnf41) |
+| [HU39](#hu39) | [RF39](Requisitos.md#rf39) | [RNF38](Requisitos.md#rnf38), [RNF39](Requisitos.md#rnf39), [RNF41](Requisitos.md#rnf41) |
+| [HU40](#hu40) | [RF40](Requisitos.md#rf40) | [RNF41](Requisitos.md#rnf41), [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| [HU41](#hu41) | [RF41](Requisitos.md#rf41) | [RNF31](Requisitos.md#rnf31), [RNF36](Requisitos.md#rnf36) |
+| [HU42](#hu42) | [RF42](Requisitos.md#rf42) | [RNF31](Requisitos.md#rnf31), [RNF36](Requisitos.md#rnf36) |
+| [HU43](#hu43) | [RF43](Requisitos.md#rf43) | [RNF32](Requisitos.md#rnf32) |
+| [HU44](#hu44) | [RF44](Requisitos.md#rf44) | [RNF31](Requisitos.md#rnf31), [RNF32](Requisitos.md#rnf32), [RNF36](Requisitos.md#rnf36) |
+| [HU45](#hu45) | [RF45](Requisitos.md#rf45) | [RNF33](Requisitos.md#rnf33), [RNF35](Requisitos.md#rnf35) |
+| [HU46](#hu46) | [RF46](Requisitos.md#rf46) | [RNF33](Requisitos.md#rnf33), [RNF34](Requisitos.md#rnf34) |
+| [HU47](#hu47) | [RF47](Requisitos.md#rf47) | [RNF35](Requisitos.md#rnf35) |
+| [HU48](#hu48) | [RF48](Requisitos.md#rf48) | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| [HU49](#hu49) | [RF49](Requisitos.md#rf49) | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| [HU50](#hu50) | [RF50](Requisitos.md#rf50) | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| [HU51](#hu51) | [RF51](Requisitos.md#rf51) | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| [HU52](#hu52) | [RF52](Requisitos.md#rf52) | [RNF44](Requisitos.md#rnf44), [RNF45](Requisitos.md#rnf45) |
+| [HU53](#hu53) | [RF53](Requisitos.md#rf53) | [RNF17](Requisitos.md#rnf17), [RNF29](Requisitos.md#rnf29) |
+| [HU54](#hu54) | [RF54](Requisitos.md#rf54) | [RNF37](Requisitos.md#rnf37) |
+| [HU55](#hu55) | [RF55](Requisitos.md#rf55) | [RNF18](Requisitos.md#rnf18) |
+
+---
+
+---
