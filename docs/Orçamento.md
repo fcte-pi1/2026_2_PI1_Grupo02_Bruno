@@ -7,14 +7,14 @@
 | **Serviços**                                          |        |               |                |
 | Impressão 3D                                          | 1      | 30,00         |                |
 | **Equipamentos e Materiais**                          |        |               |                |
-| MOTOR DC COM ENCODER - 750rpm                         | 2      | 132,54        |                |
-| 2 RODAS 3MM EIXO "D"                                  | 1      | 30,89         |                |
-| KIT - 5 SENSORES INFRAVERMELHO                        | 1      | 18,38         |                |
-| Esfera Deslizante                                     | 1      | 25,89         |                |
-| L298N - DC Motor Driver                               | 1      | 16,78         |                |
-| ESP32                                                 | 3      | 99,30         |                |
-| Bateria Lipo Tattu 800mAh 7.4V 45C 2S1P               | 1      | 81,00         |                |
-| INA219                                                | 1      | 10,79         |                |
+| MOTOR DC COM ENCODER - 750rpm                         | 2      | 132,54        |  132,54              |
+| 2 RODAS 3MM EIXO "D"                                  | 1      | 30,89         |   30,89              |
+| KIT - 5 SENSORES INFRAVERMELHO                        | 1      | 18,38         | 18,38               |
+| Esfera Deslizante                                     | 1      | 25,89         |  25,89              |
+| L298N - DC Motor Driver                               | 1      | 16,78         |  16,78              |
+| ESP32                                                 | 3      | 99,30         |   99,30             |
+| Bateria Lipo Tattu 800mAh 7.4V 45C 2S1P               | 1      | 81,00         |   81,00              |
+| INA219                                                | 1      | 10,79         |  10,79              |
 | Chapas de MDF                                         | 2      | 59,80         |                |
 | **TOTAL (Serviços + Equipamentos)**                   | \-     | **505,37**    |                |
 | **TOTAL (Mão de Obra + Serviços + Equipamentos)**     | \-     | **7.127,59** |                |
