@@ -16,7 +16,7 @@
 | Bateria Lipo Tattu 800mAh 7.4V 45C 2S1P               | 1      | 81,00         |   81,00              |
 | INA219                                                | 1      | 10,79         |  10,79              |
 | Chapas de MDF                                         | 2      | 59,80         |                |
-| **TOTAL (Serviços + Equipamentos)**                   | \-     | **505,37**    |                |
+| **TOTAL (Serviços + Equipamentos)**                   | \-     | **505,37**    |       **415,57**         |
 | **TOTAL (Mão de Obra + Serviços + Equipamentos)**     | \-     | **7.127,59** |                |
 
 
