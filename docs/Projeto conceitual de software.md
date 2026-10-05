@@ -20,7 +20,7 @@ Os retângulos representam componentes; os círculos identificam as interfaces `
 
 #### 2. Diagrama de pacotes UML
 
-A Figura 2 apresenta uma organização proposta para os pacotes, com nomes convencionais do ecossistema Spring. Ela ainda não representa a estrutura existente no código: os diretórios de backend e frontend permanecem sem implementação. Os pacotes seguem uma organização em camadas com adaptadores nas bordas: `controller` recebe requisições; `service` concentra os casos de uso e as portas de saída; `model` contém o domínio; `repository` declara as portas de persistência; e `adapter` reúne as integrações concretas. As dependências apontam para as abstrações usadas. O broker, o robô e o banco não aparecem aqui porque são componentes externos, já apresentados na Figura 1.
+A Figura 2 apresenta a organização inicial dos pacotes no código, com nomes convencionais do ecossistema Spring. Os diretórios já estão criados; as classes e módulos de negócio serão implementados conforme as funcionalidades forem desenvolvidas. No backend, `controller` recebe requisições; `service` concentra os casos de uso e as portas de saída; `model` contém o domínio; `repository` declara as portas de persistência; e `adapter` reúne as integrações concretas. No frontend, `components`, `api`, `realtime` e `models` organizam a interface e suas comunicações. As dependências apontam para as abstrações usadas. O broker, o robô e o banco não aparecem aqui porque são componentes externos, já apresentados na Figura 1.
 
 Figura 2 – Diagrama de pacotes UML da solução de software
 
