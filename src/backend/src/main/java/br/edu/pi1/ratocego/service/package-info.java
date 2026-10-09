@@ -1,2 +1,2 @@
-/** Application use cases and output ports. */
+/** Application services and use cases. */
 package br.edu.pi1.ratocego.service;

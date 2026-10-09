@@ -24,10 +24,17 @@ package "Frontend React" as frontend {
 package "Backend Spring Boot" as backend {
   package "config" as config
   package "controller" as controller
-  package "dto" as dto
-  package "service" as service
+  package "dto" as dto {
+    package "mqtt" as mqttdto
+    package "websocket" as wsdto
+  }
+  package "service" as service {
+    package "port" as port
+  }
   package "model" as model
   package "repository" as repository
+  package "mapper" as mapper
+  package "util" as util
   package "adapter" as adapter {
     package "mqtt" as mqtt
     package "websocket" as websocket
@@ -38,23 +45,20 @@ package "Backend Spring Boot" as backend {
 components ..> api
 components ..> realtime
 components ..> models
-api ..> models
-realtime ..> models
-
 api ..> controller
 api ..> dto
-realtime ..> websocket
-realtime ..> dto
-
+realtime ..> wsdto
 controller ..> service
 controller ..> dto
 service ..> model
 service ..> dto
 service ..> repository
- mqtt ..> service
-websocket ..> service
- persistence ..> repository
+service ..> port
+service ..> mapper
+service ..> util
+mqtt ..> service
+websocket ..> port
+persistence ..> repository
 config ..> adapter
-config ..> service
 
 @enduml
