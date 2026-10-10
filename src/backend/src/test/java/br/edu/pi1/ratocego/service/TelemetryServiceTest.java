@@ -52,7 +52,7 @@ class TelemetryServiceTest {
         var payload = payload(1, 1, 1, "2026-10-09T12:00:01Z", "6.5", "100", "1.0");
         when(parser.parseAndValidate("json", TelemetrySamplePayload.class)).thenReturn(payload);
         when(samples.existsByEventId(1)).thenReturn(false);
-        when(samples.existsByRun_IdAndSequence(1, 1)).thenReturn(false);
+        when(samples.existsByRun_IdAndSequenceNumber(1, 1)).thenReturn(false);
         when(runs.findById(1L)).thenReturn(Optional.of(run));
         when(mapper.toTelemetryUpdate(payload)).thenReturn(TelemetryUpdate.builder()
                 .runId(1).sequence(1).timestamp(payload.timestamp()).position(payload.position()).build());
@@ -168,7 +168,7 @@ class TelemetryServiceTest {
     private void stubAcceptedSample(TelemetrySamplePayload payload, Run run) {
         when(parser.parseAndValidate("json", TelemetrySamplePayload.class)).thenReturn(payload);
         when(samples.existsByEventId(payload.eventId())).thenReturn(false);
-        when(samples.existsByRun_IdAndSequence(payload.runId(), payload.sequence())).thenReturn(false);
+        when(samples.existsByRun_IdAndSequenceNumber(payload.runId(), payload.sequence())).thenReturn(false);
         when(runs.findById(payload.runId())).thenReturn(Optional.of(run));
         when(mapper.toTelemetryUpdate(payload)).thenReturn(TelemetryUpdate.builder()
                 .runId(payload.runId()).sequence(payload.sequence()).timestamp(payload.timestamp())

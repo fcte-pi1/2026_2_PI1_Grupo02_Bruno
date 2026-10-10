@@ -7,5 +7,5 @@ public interface TelemetrySampleRepository extends JpaRepository<TelemetrySample
 
     boolean existsByEventId(long eventId);
 
-    boolean existsByRun_IdAndSequence(long runId, long sequence);
+    boolean existsByRun_IdAndSequenceNumber(long runId, long sequenceNumber);
 }

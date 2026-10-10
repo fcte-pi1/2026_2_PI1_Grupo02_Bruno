@@ -27,20 +27,20 @@ public class TelemetrySample {
     @JoinColumn(name = "run_id", nullable = false)
     private Run run;
 
-    @Column(name = "event_id", nullable = false)
+    @Column(nullable = false)
     private long eventId;
 
-    @Column(name = "sequence_number", nullable = false)
-    private long sequence;
+    @Column(nullable = false)
+    private long sequenceNumber;
 
-    @Column(name = "recorded_at", nullable = false)
-    private Instant timestamp;
+    @Column(nullable = false)
+    private Instant recordedAt;
 
-    @Column(name = "position_row", nullable = false)
-    private int row;
+    @Column(nullable = false)
+    private int positionRow;
 
-    @Column(name = "position_column", nullable = false)
-    private int column;
+    @Column(nullable = false)
+    private int positionColumn;
 
     @Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(nullable = false)
@@ -58,10 +58,10 @@ public class TelemetrySample {
         TelemetrySample storedSample = new TelemetrySample();
         storedSample.setRun(run);
         storedSample.setEventId(sample.eventId());
-        storedSample.setSequence(sample.sequence());
-        storedSample.setTimestamp(sample.timestamp());
-        storedSample.setRow(sample.position().row());
-        storedSample.setColumn(sample.position().column());
+        storedSample.setSequenceNumber(sample.sequence());
+        storedSample.setRecordedAt(sample.timestamp());
+        storedSample.setPositionRow(sample.position().row());
+        storedSample.setPositionColumn(sample.position().column());
         storedSample.setHeading(sample.position().heading());
         storedSample.setDistanceTravelledMeters(sample.distanceTravelledMeters());
         storedSample.setCurrentSpeedMetersPerSecond(sample.currentSpeedMetersPerSecond());

@@ -78,7 +78,7 @@ public class TelemetryService {
 
     private boolean isDuplicate(TelemetrySamplePayload sample) {
         boolean duplicate = sampleRepository.existsByEventId(sample.eventId())
-                || sampleRepository.existsByRun_IdAndSequence(sample.runId(), sample.sequence());
+                || sampleRepository.existsByRun_IdAndSequenceNumber(sample.runId(), sample.sequence());
         if (duplicate) {
             log.warn("Ignoring duplicate telemetry eventId={} runId={} sequence={}",
                     sample.eventId(), sample.runId(), sample.sequence());
@@ -120,6 +120,7 @@ public class TelemetryService {
 
     private void accumulateConsumption(Run run, TelemetrySamplePayload sample, BigDecimal powerWatts) {
         if (run.getLastSampleAt() == null) return;
+
         BigDecimal seconds = secondsBetween(run.getLastSampleAt(), sample.timestamp());
         BigDecimal averageCurrent = run.getLastCurrentMilliAmps().add(sample.currentMilliAmps())
                 .divide(TWO, CALCULATION_CONTEXT);

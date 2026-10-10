@@ -20,6 +20,18 @@ import org.springframework.messaging.MessageHandler;
 @EnableIntegration
 public class MqttConfig {
 
+    @Value("${app.mqtt.client-id}")
+    private String clientId;
+
+    @Value("${app.mqtt.topic-prefix}")
+    private String topicPrefix;
+
+    @Value("${app.mqtt.server-uri}")
+    private String brokerUri;
+
+    @Value("${app.mqtt.qos:1}")
+    private int qos;
+
     @Bean
     MqttPahoClientFactory mqttClientFactory(
             @Value("${app.mqtt.username}") String username,
@@ -62,46 +74,30 @@ public class MqttConfig {
 
     @Bean
     MessageProducer mqttTelemetryInbound(
-            @Value("${app.mqtt.client-id}") String clientId,
-            @Value("${app.mqtt.topic-prefix}") String topicPrefix,
-            @Value("${app.mqtt.server-uri}") String brokerUri,
-            @Value("${app.mqtt.qos:1}") int qos,
             MqttPahoClientFactory factory,
             @Qualifier("mqttTelemetryInputChannel") MessageChannel inputChannel) {
-        return inboundAdapter(brokerUri, clientId + "-telemetry", topicPrefix + "/runs/+/telemetry", qos, factory, inputChannel);
+        return inboundAdapter("-telemetry", "/runs/+/telemetry", factory, inputChannel);
     }
 
     @Bean
     MessageProducer mqttRunStartedInbound(
-            @Value("${app.mqtt.client-id}") String clientId,
-            @Value("${app.mqtt.topic-prefix}") String topicPrefix,
-            @Value("${app.mqtt.server-uri}") String brokerUri,
-            @Value("${app.mqtt.qos:1}") int qos,
             MqttPahoClientFactory factory,
             @Qualifier("mqttRunStartedInputChannel") MessageChannel inputChannel) {
-        return inboundAdapter(brokerUri, clientId + "-run-started", topicPrefix + "/runs/+/started", qos, factory, inputChannel);
+        return inboundAdapter("-run-started", "/runs/+/started", factory, inputChannel);
     }
 
     @Bean
     MessageProducer mqttRunFinishedInbound(
-            @Value("${app.mqtt.client-id}") String clientId,
-            @Value("${app.mqtt.topic-prefix}") String topicPrefix,
-            @Value("${app.mqtt.server-uri}") String brokerUri,
-            @Value("${app.mqtt.qos:1}") int qos,
             MqttPahoClientFactory factory,
             @Qualifier("mqttRunFinishedInputChannel") MessageChannel inputChannel) {
-        return inboundAdapter(brokerUri, clientId + "-run-finished", topicPrefix + "/runs/+/finished", qos, factory, inputChannel);
+        return inboundAdapter("-run-finished", "/runs/+/finished", factory, inputChannel);
     }
 
     @Bean
     MessageProducer mqttRunInterruptedInbound(
-            @Value("${app.mqtt.client-id}") String clientId,
-            @Value("${app.mqtt.topic-prefix}") String topicPrefix,
-            @Value("${app.mqtt.server-uri}") String brokerUri,
-            @Value("${app.mqtt.qos:1}") int qos,
             MqttPahoClientFactory factory,
             @Qualifier("mqttRunInterruptedInputChannel") MessageChannel inputChannel) {
-        return inboundAdapter(brokerUri, clientId + "-run-interrupted", topicPrefix + "/runs/+/interrupted", qos, factory, inputChannel);
+        return inboundAdapter("-run-interrupted", "/runs/+/interrupted", factory, inputChannel);
     }
 
     @Bean
@@ -126,13 +122,16 @@ public class MqttConfig {
     }
 
     private MessageProducer inboundAdapter(
-            String brokerUri,
-            String clientId,
-            String topic,
-            int qos,
+            String clientIdSuffix,
+            String topicSuffix,
             MqttPahoClientFactory factory,
             MessageChannel outputChannel) {
-        var adapter = new MqttPahoMessageDrivenChannelAdapter(brokerUri, clientId, factory, topic);
+        var adapter = new MqttPahoMessageDrivenChannelAdapter(
+                brokerUri,
+                clientId + clientIdSuffix,
+                factory,
+                topicPrefix + topicSuffix
+        );
         adapter.setQos(qos);
         adapter.setOutputChannel(outputChannel);
         return adapter;
