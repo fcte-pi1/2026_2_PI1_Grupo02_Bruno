@@ -1,14 +1,14 @@
 # Projeto Conceitual de Software
 
-## Arquitetura proposta da solução de software
+## Arquitetura da solução de software
 
-Esta seção descreve a arquitetura proposta para a aplicação de software do Rato Cego, composta pelo broker MQTT local Eclipse Mosquitto, backend, frontend e banco de dados. A integração com o robô ocorre por meio das mensagens MQTT descritas nesta seção.
+Esta seção descreve a arquitetura da aplicação de software do Rato Cego, composta pelo broker MQTT local Eclipse Mosquitto, backend, frontend e banco de dados. O backend Spring Boot recebe eventos MQTT e telemetria, persiste os dados e transmite atualizações STOMP/WebSocket; os fluxos REST de início, interrupção e consulta histórica integram a mesma arquitetura.
 
 Os serviços serão executados localmente, no mesmo computador. Portanto, a solução não depende de plataforma de nuvem, de serviços pagos ou de conexão com a Internet. O Mosquitto será executado em um contêiner Docker e deverá expor a porta MQTT `1883` para a rede local usada pelo robô. A configuração do broker será mantida em arquivo próprio, montado no contêiner, para definir o *listener*, a política de acesso e, quando necessário, a persistência e os registros de operação.
 
 ### 1. Visão de implementação e diagrama de componentes UML
 
-O diagrama de componentes (Figura 1) apresenta os módulos previstos e os contratos de comunicação entre eles. O frontend solicita operações pela API REST; o backend publica os comandos pelo broker e recebe do robô confirmações, telemetria e eventos de término. O diagrama representa o PostgreSQL como banco relacional local.
+O diagrama de componentes (Figura 1) apresenta os módulos e contratos de comunicação entre eles. O frontend solicita operações pela API REST; o backend publica comandos pelo broker e recebe do robô confirmações, telemetria e eventos de término. O PostgreSQL é o banco relacional local.
 
 Figura 1 – Diagrama de componentes UML da solução de software
 
@@ -16,17 +16,17 @@ Figura 1 – Diagrama de componentes UML da solução de software
 
 Fonte: Elaborado pelos autores (2026).
 
-Os retângulos representam componentes; os círculos identificam as interfaces `RunCommandPublisher`, `TelemetryPublisher` e `RunRepository`/`MazeRepository`. As setas tracejadas representam dependência ou realização de interface, enquanto as contínuas representam comunicação entre componentes. O frontend solicita apenas início e interrupção de uma tentativa; não envia comandos de movimento nem controla a navegação autônoma. O Mosquitto apenas encaminha mensagens MQTT. As portas de persistência isolam os serviços do PostgreSQL e da tecnologia de acesso Spring Data JPA.
+Os retângulos representam componentes; os círculos identificam as portas `MessagePublisher` e `TelemetryPublisher`, além dos repositórios Spring Data JPA. As setas tracejadas representam dependência ou realização de interface, enquanto as contínuas representam comunicação entre componentes. O frontend solicita início e interrupção; não envia comandos de movimento nem controla a navegação autônoma. O Mosquitto encaminha mensagens MQTT. Os serviços usam `RunRepository` e `TelemetrySampleRepository` para persistir execuções e amostras e publicam `WebSocketUpdateEvent`. O `WebSocketUpdateEventListener` recebe o evento após o commit e encaminha a atualização pelo `TelemetryPublisher` ao adaptador STOMP.
 
 #### 2. Diagrama de pacotes UML
 
-A Figura 2 apresenta a organização inicial dos pacotes no código, com nomes convencionais do ecossistema Spring. Os diretórios já estão criados; as classes e módulos de negócio serão implementados conforme as funcionalidades forem desenvolvidas. No backend, `controller` recebe requisições; `service` concentra os casos de uso e as portas de saída; `model` contém o domínio; `repository` declara as portas de persistência; e `adapter` reúne as integrações concretas. No frontend, `components`, `api`, `realtime` e `models` organizam a interface e suas comunicações. As dependências apontam para as abstrações usadas. O broker, o robô e o banco não aparecem aqui porque são componentes externos, já apresentados na Figura 1.
+A Figura 2 apresenta a organização dos pacotes. No backend, `controller` recebe requisições; `service` concentra o ciclo de vida e o processamento da telemetria; `service.port` declara as portas de publicação; `model` contém as entidades e enums; `repository` contém repositórios Spring Data JPA; `mapper` converte dados de telemetria; `util` interpreta payloads MQTT; e `adapter` reúne as integrações MQTT e WebSocket. No frontend, `components`, `api`, `realtime` e `models` organizam a interface e suas comunicações. O broker, o robô e o banco são componentes externos apresentados na Figura 1.
 
 Figura 2 – Diagrama de pacotes UML da solução de software
 
 ![Diagrama UML de pacotes do backend e frontend, com dependências entre pacotes](./figs/diagrama_pacotes_software.svg)
 
-As setas tracejadas com ponta aberta representam dependências UML. `api` depende de `controller` para as operações REST; `realtime` depende de `adapter.websocket` para as atualizações WebSocket. As interfaces `RunCommandPublisher` e `TelemetryPublisher` pertencem ao pacote `service`; `RunRepository` e `MazeRepository` pertencem a `repository`. As implementações concretas ficam nos adaptadores. O adaptador de persistência utiliza Spring Data JPA para acessar o PostgreSQL.
+As setas tracejadas com ponta aberta representam dependências UML. `api` depende de `controller` para operações REST; `realtime` recebe atualizações do adaptador WebSocket. `MessagePublisher` e `TelemetryPublisher` pertencem a `service.port`; `RunRepository` e `TelemetrySampleRepository` pertencem a `repository` e estendem Spring Data JPA.
 
 ### 3. Visão e diagrama de implantação
 Todos os serviços de software residem no mesmo computador local . O robô é o único nó separado e alcança o Mosquitto pela rede local. O navegador pode rodar nesse computador; para outro dispositivo acessar uma interface, seria necessário configurar a exposição das portas HTTP e WebSocket na rede.
@@ -90,7 +90,9 @@ sequenceDiagram
     participant S as RunService
     participant M as Mosquitto
     participant R as Robô Rato Cego
-    participant T as TelemetryMqttListener
+    participant T as MqttRunListener
+    participant TL as MqttTelemetryListener
+    participant E as WebSocketUpdateEventListener
     participant W as WebSocketTelemetryAdapter
 
     U->>F: Seleciona o tipo de labirinto e solicita início
@@ -98,7 +100,8 @@ sequenceDiagram
     C->>S: startRun(request)
     S->>S: Verifica tentativa ativa e gera runId
     S->>M: Publica run.start (runId, mazeType)
-    S-->>W: RUN_START_REQUESTED
+    S-->>E: WebSocketUpdateEvent(RUN_START_REQUESTED)
+    E->>W: AFTER_COMMIT: TelemetryPublisher
     W-->>F: Estado START_REQUESTED
     M->>R: Entrega comando run.start
     alt Robô confirma o início
@@ -106,14 +109,16 @@ sequenceDiagram
         M->>T: Entrega confirmação de início
         T->>S: confirmRunStarted(payload)
         S->>S: Define IN_PROGRESS e inicia cronômetro
-        S-->>W: RUN_STARTED
+        S-->>E: WebSocketUpdateEvent(RUN_STARTED)
+        E->>W: AFTER_COMMIT: TelemetryPublisher
         W-->>F: Estado IN_PROGRESS
 
         loop Durante a tentativa
             R->>M: Publica telemetry.sample (runId, sequence, dados)
-            M->>T: Entrega amostra
-            T->>S: processSample(payload)
-            S-->>W: TELEMETRY_UPDATE
+            M->>TL: Entrega amostra no canal de telemetria
+            TL->>S: processSample(payload)
+            S-->>E: WebSocketUpdateEvent(TELEMETRY_UPDATE)
+            E->>W: AFTER_COMMIT: TelemetryPublisher
             W-->>F: Atualiza telemetria e trajeto
         end
 
@@ -122,7 +127,8 @@ sequenceDiagram
         C->>S: requestInterruption(runId)
         S->>S: Define INTERRUPT_REQUESTED
         S->>M: Publica run.interrupt (runId)
-        S-->>W: RUN_INTERRUPT_REQUESTED
+        S-->>E: WebSocketUpdateEvent(RUN_INTERRUPT_REQUESTED)
+        E->>W: AFTER_COMMIT: TelemetryPublisher
         W-->>F: Interrupção solicitada, aguardando robô
         M->>R: Entrega comando run.interrupt
 
@@ -131,14 +137,16 @@ sequenceDiagram
             M->>T: Entrega confirmação
             T->>S: confirmRunInterrupted(payload)
             S->>S: Define INTERRUPTED e persiste dados parciais
-            S-->>W: RUN_INTERRUPTED
+            S-->>E: WebSocketUpdateEvent(RUN_INTERRUPTED)
+            E->>W: AFTER_COMMIT: TelemetryPublisher
             W-->>F: Interrupção confirmada
         else Robô termina antes da interrupção
             R->>M: Publica run.finished (runId, resultado)
             M->>T: Entrega evento de término
             T->>S: finishRun(payload)
             S->>S: Registra resultado final
-            S-->>W: RUN_FINISHED
+            S-->>E: WebSocketUpdateEvent(RUN_FINISHED)
+            E->>W: AFTER_COMMIT: TelemetryPublisher
             W-->>F: Exibe resultado final
         else Confirmação de interrupção não chega em 2 segundos
             S-->>W: RUN_INTERRUPT_REQUESTED com detalhe de não confirmação
@@ -155,38 +163,43 @@ Fonte: Elaborado pelos autores (2026).
 
 ### 7. Visão lógica e diagrama de classes UML
 
-A visão lógica organiza os conceitos do domínio e as responsabilidades do backend. A implementação seguirá uma arquitetura em camadas simples: controllers recebem as entradas, services coordenam os casos de uso, models representam o domínio e repositories abstraem a persistência. O padrão Ports and Adapters é aplicado de forma leve: `RunRepository` e `MazeRepository` são portas de persistência; `RunCommandPublisher` e `TelemetryPublisher` são portas de saída declaradas no pacote `service`. Os adaptadores de persistência, MQTT e WebSocket implementam essas portas e fazem a integração com tecnologias externas.
+A visão lógica organiza os conceitos do domínio e as responsabilidades do backend. Controllers recebem entradas REST; `RunLifecycleService` processa os eventos do ciclo de execução; `TelemetryService` valida e processa amostras; models representam o domínio; e repositórios Spring Data JPA persistem dados. Os serviços publicam `WebSocketUpdateEvent`, que contém um `WebSocketUpdate` type-safe. O `WebSocketUpdateEventListener`, anotado com `@TransactionalEventListener(phase = AFTER_COMMIT)`, encaminha o update ao `TelemetryPublisher` somente após o commit. `MessagePublisher` e `TelemetryPublisher`, em `service.port`, isolam as publicações MQTT e WebSocket. `MqttPayloadParser` interpreta os payloads, e `TelemetryMapper` prepara os dados de telemetria.
 
 Os nomes de classes, interfaces, enums, atributos e métodos no diagrama estão em inglês, conforme a convenção usual de projetos Java. O restante da documentação permanece em português. As entidades de domínio não possuem herança entre si, pois não há comportamento compartilhado que justifique uma superclasse. As implementações dos adaptadores realizam suas interfaces; essa relação é mostrada com a notação UML de realização.
+
+`RunStatus` controla as transições do ciclo por `transitionTo(next)`, implementado com `switch` no próprio enum. São válidas `START_REQUESTED → IN_PROGRESS` e `START_REQUESTED → FAILED`; `IN_PROGRESS → INTERRUPT_REQUESTED`, `COMPLETED` ou `FAILED`; e `INTERRUPT_REQUESTED → INTERRUPTED`, `COMPLETED` ou `FAILED`. `COMPLETED`, `FAILED` e `INTERRUPTED` são estados terminais e não aceitam novas transições.
 
 Figura 6 – Diagrama de classes UML do sistema Rato Cego
 
 ```mermaid
 classDiagram
     namespace model {
-        class Maze {
-            +UUID id
-            +String name
-            +int rows
-            +int columns
-            +MazeType type
-        }
         class Run {
-            +UUID id
-            +Instant requestedAt
+            +Long id
+            +RunStatus status
             +Instant startedAt
             +Instant finishedAt
-            +RunStatus status
+            +Integer mazeRows
+            +Integer mazeColumns
             +Boolean challengeCompleted
             +BigDecimal distanceTravelledMeters
             +BigDecimal averageSpeedMetersPerSecond
             +BigDecimal chargeConsumedMilliampHours
             +BigDecimal energyConsumedWattHours
-            +Duration getDuration()
+            +BatteryStatus batteryStatus
+            +long lastSequence
+            +Instant lastSampleAt
+            +BigDecimal lastCurrentMilliAmps
+            +BigDecimal lastPowerWatts
         }
         class TelemetrySample {
+            +Long id
+            +long eventId
             +long sequence
-            +Instant recordedAt
+            +Instant timestamp
+            +int row
+            +int column
+            +Heading heading
             +BigDecimal distanceTravelledMeters
             +BigDecimal currentSpeedMetersPerSecond
             +BigDecimal batteryVoltageVolts
@@ -213,6 +226,7 @@ classDiagram
             COMPLETED
             FAILED
             INTERRUPTED
+            +transitionTo(next) RunStatus
         }
         class BatteryStatus {
             <<enumeration>>
@@ -226,36 +240,31 @@ classDiagram
             GRID_12X4
         }
     }
-
     namespace dto {
         class StartRunRequest {
             +MazeType mazeType
         }
         class StartRunCommand {
-            +int schemaVersion
-            +UUID eventId
-            +UUID runId
+            +long eventId
+            +long runId
             +MazeType mazeType
             +Instant timestamp
         }
         class InterruptRunCommand {
-            +int schemaVersion
-            +UUID eventId
-            +UUID runId
+            +long eventId
+            +long runId
             +Instant timestamp
         }
         class RunStartedPayload {
-            +int schemaVersion
-            +UUID eventId
-            +UUID runId
+            +long eventId
+            +long runId
             +Instant timestamp
             +int mazeRows
             +int mazeColumns
         }
         class TelemetrySamplePayload {
-            +int schemaVersion
-            +UUID eventId
-            +UUID runId
+            +long eventId
+            +long runId
             +long sequence
             +Instant timestamp
             +Position position
@@ -265,47 +274,29 @@ classDiagram
             +BigDecimal currentMilliAmps
         }
         class RunFinishedPayload {
-            +int schemaVersion
-            +UUID eventId
-            +UUID runId
+            +long eventId
+            +long runId
             +Instant timestamp
             +RunStatus status
             +Boolean challengeCompleted
         }
         class RunInterruptedPayload {
-            +int schemaVersion
-            +UUID eventId
-            +UUID runId
+            +long eventId
+            +long runId
             +Instant timestamp
         }
-        class RunResponse {
-            +UUID id
-            +MazeType mazeType
-            +String mazeName
-            +RunStatus status
-            +Instant requestedAt
-            +Instant startedAt
-            +Instant finishedAt
-            +Duration duration
-            +Boolean challengeCompleted
-            +BigDecimal distanceTravelledMeters
-            +BigDecimal averageSpeedMetersPerSecond
-            +BigDecimal chargeConsumedMilliampHours
-            +BigDecimal energyConsumedWattHours
+        class WebSocketUpdate {
+            <<sealed interface>>
         }
         class RunStartedUpdate {
-            +int schemaVersion
-            +RunUpdateType eventType
-            +UUID runId
+            +long runId
             +Instant timestamp
             +int mazeRows
             +int mazeColumns
             +RunStatus status
         }
         class TelemetryUpdate {
-            +int schemaVersion
-            +RunUpdateType eventType
-            +UUID runId
+            +long runId
             +long sequence
             +Instant timestamp
             +Position position
@@ -318,12 +309,9 @@ classDiagram
             +BatteryStatus batteryStatus
             +BigDecimal chargeConsumedMilliampHours
             +BigDecimal energyConsumedWattHours
-            +Duration elapsedTime
         }
         class RunFinishedUpdate {
-            +int schemaVersion
-            +RunUpdateType eventType
-            +UUID runId
+            +long runId
             +Instant timestamp
             +RunStatus status
             +Boolean challengeCompleted
@@ -331,176 +319,140 @@ classDiagram
             +BigDecimal averageSpeedMetersPerSecond
             +BigDecimal chargeConsumedMilliampHours
             +BigDecimal energyConsumedWattHours
-            +Duration elapsedTime
         }
-        class RunUpdateType {
-            <<enumeration>>
-            RUN_START_REQUESTED
-            RUN_STARTED
-            RUN_START_FAILED
-            TELEMETRY_UPDATE
-            RUN_INTERRUPT_REQUESTED
-            RUN_INTERRUPTED
-            RUN_FINISHED
-        }
-        class RunStatusUpdate {
-            +int schemaVersion
-            +RunUpdateType eventType
-            +UUID runId
+        class RunInterruptedUpdate {
+            +long runId
             +Instant timestamp
             +RunStatus status
-            +String detail
+        }
+        class RunResponse {
+            +long id
+            +RunStatus status
+            +Instant startedAt
+            +Instant finishedAt
+            +Duration duration
+            +Boolean challengeCompleted
+            +BigDecimal distanceTravelledMeters
+            +BigDecimal averageSpeedMetersPerSecond
+            +BigDecimal chargeConsumedMilliampHours
+            +BigDecimal energyConsumedWattHours
         }
     }
-
     namespace service {
-        class RunService {
-            +startRun(request) RunResponse
-            +requestInterruption(runId) RunResponse
-            +confirmRunStarted(payload) void
-            +confirmRunInterrupted(payload) void
-            +finishRun(payload) void
-            +failStart(runId) void
-            +getAllRuns() List~RunResponse~
-            +getRunsByMaze(mazeId) List~RunResponse~
-            +getRunById(runId) RunResponse
+        class RunLifecycleService {
+            +processStarted(payload) void
+            +processFinished(payload) void
+            +processInterrupted(payload) void
         }
         class TelemetryService {
             +processSample(payload) void
         }
-        class TelemetryMapper {
-            +toDomainSample(payload) TelemetrySample
-            +toStartedUpdate(run) RunStartedUpdate
-            +toRunStatusUpdate(run, eventType) RunStatusUpdate
-            +toTelemetryUpdate(run) TelemetryUpdate
-            +toFinishedUpdate(run) RunFinishedUpdate
+        class WebSocketUpdateEvent {
+            +WebSocketUpdate update
         }
-        class RunCommandPublisher {
+        class MessagePublisher {
             <<interface>>
-            +publishStart(command) void
-            +publishInterruption(command) void
+            +publish(topic, payload) void
         }
         class TelemetryPublisher {
             <<interface>>
-            +publishRunStatus(update) void
-            +publishStarted(update) void
+            +publishRunStarted(update) void
             +publishTelemetry(update) void
-            +publishFinished(update) void
+            +publishRunFinished(update) void
+            +publishRunInterrupted(update) void
         }
     }
-
+    namespace mapper {
+        class TelemetryMapper {
+            +toTelemetryUpdate(payload) TelemetryUpdate
+        }
+    }
+    namespace util {
+        class MqttPayloadParser {
+            +parseAndValidate(payload, type) T
+        }
+    }
     namespace controller {
         class RunController {
             +startRun(request) RunResponse
             +interruptRun(runId) RunResponse
             +getAllRuns() List~RunResponse~
-            +getRunsByMaze(mazeId) List~RunResponse~
             +getRunById(runId) RunResponse
         }
     }
-
     namespace repository {
         class RunRepository {
-            <<interface>>
-            +save(run) Run
-            +findById(runId) Optional~Run~
-            +findAll() List~Run~
-            +findByMazeId(mazeId) List~Run~
+            <<JpaRepository~Run, Long~>>
         }
-        class MazeRepository {
-            <<interface>>
-            +findById(mazeId) Optional~Maze~
-            +findByDimensions(rows, columns) Optional~Maze~
+        class TelemetrySampleRepository {
+            <<JpaRepository~TelemetrySample, Long~>>
+            +existsByEventId(eventId) boolean
+            +existsByRun_IdAndSequence(runId, sequence) boolean
         }
     }
-
     namespace adapter {
-        class TelemetryMqttListener {
+        class MqttRunListener {
             +onRunStarted(payload) void
-            +onTelemetrySample(payload) void
             +onRunFinished(payload) void
             +onRunInterrupted(payload) void
         }
-        class MqttRunCommandAdapter
-        class RunPersistenceAdapter
-        class MazePersistenceAdapter
+        class MqttTelemetryListener {
+            +onTelemetrySample(payload) void
+        }
+        class MqttMessagePublisherAdapter
         class WebSocketTelemetryAdapter
+        class WebSocketUpdateEventListener {
+            +onUpdate(event) void
+        }
     }
-
-    namespace config {
-        class ApplicationConfiguration
-    }
-
-    Maze "1" <-- "0..*" Run : belongs to
-    Run "1" *-- "0..*" TelemetrySample : contains
-    TelemetrySample "1" *-- "0..1" Position : records
-    Maze --> MazeType : has type
+    Run "1" <-- "0..*" TelemetrySample : owns
+    TelemetrySamplePayload --> Position : carries
+    TelemetryUpdate --> Position : reports
     Run --> RunStatus : has status
-    Run ..> MazeType : selected type
-    TelemetryUpdate --> BatteryStatus : reports battery state
-    Position --> Heading : faces
-    RunStartedUpdate --> RunUpdateType : identifies event
-    TelemetryUpdate --> RunUpdateType : identifies event
-    RunFinishedUpdate --> RunUpdateType : identifies event
-
-    TelemetryMqttListener ..> RunService : forwards lifecycle events
-    TelemetryMqttListener ..> TelemetryService : forwards telemetry samples
-    RunController ..> RunService : starts and interrupts
-    RunController ..> StartRunRequest : receives
-    RunService ..> RunCommandPublisher : sends robot commands
-    TelemetryService ..> TelemetryMapper : maps and calculates
-    TelemetryService ..> RunRepository : stores samples and runs
-    TelemetryService ..> MazeRepository : resolves maze
-    TelemetryService ..> TelemetryPublisher : requests live update
-    RunService ..> TelemetryPublisher : publishes lifecycle updates
-    RunService ..> RunRepository : queries runs
-    RunService ..> RunRepository : saves lifecycle state
-    RunService ..> MazeRepository : validates maze filter
-
-    RunPersistenceAdapter ..|> RunRepository : implements
-    MazePersistenceAdapter ..|> MazeRepository : implements
+    TelemetryUpdate --> BatteryStatus : reports
+    RunStartedUpdate ..|> WebSocketUpdate
+    TelemetryUpdate ..|> WebSocketUpdate
+    RunFinishedUpdate ..|> WebSocketUpdate
+    RunInterruptedUpdate ..|> WebSocketUpdate
+    WebSocketUpdateEvent --> WebSocketUpdate : contains
+    MqttRunListener ..> RunLifecycleService : forwards lifecycle messages
+    MqttTelemetryListener ..> TelemetryService : forwards samples
+    RunLifecycleService ..> RunRepository : persists state
+    RunLifecycleService ..> MessagePublisher : publishes MQTT commands
+    TelemetryService ..> RunRepository : updates run metrics
+    TelemetryService ..> TelemetrySampleRepository : persists samples
+    TelemetryService ..> TelemetryMapper : maps update
+    TelemetryService ..> MqttPayloadParser : parses payload
+    RunLifecycleService ..> MqttPayloadParser : parses payload
+    RunLifecycleService ..> WebSocketUpdateEvent : publishes update
+    TelemetryService ..> WebSocketUpdateEvent : publishes update
+    WebSocketUpdateEventListener ..> WebSocketUpdateEvent : AFTER_COMMIT
+    WebSocketUpdateEventListener ..> TelemetryPublisher : forwards committed update
     WebSocketTelemetryAdapter ..|> TelemetryPublisher : implements
-    MqttRunCommandAdapter ..|> RunCommandPublisher : implements
-    TelemetryMqttListener ..> RunInterruptedPayload : receives
-    MqttRunCommandAdapter ..> StartRunCommand : publishes
-    MqttRunCommandAdapter ..> InterruptRunCommand : publishes
-    TelemetryMqttListener ..> RunStartedPayload : receives
-    TelemetryMqttListener ..> TelemetrySamplePayload : receives
-    TelemetryMqttListener ..> RunFinishedPayload : receives
-    TelemetryMapper ..> TelemetrySamplePayload : reads
-    TelemetryMapper ..> TelemetrySample : creates
-    TelemetryMapper ..> RunStartedUpdate : creates
-    TelemetryMapper ..> TelemetryUpdate : creates
-    TelemetryMapper ..> RunFinishedUpdate : creates
-    TelemetryMapper ..> RunStatusUpdate : creates
-    RunController ..> RunResponse : returns
-    TelemetryPublisher ..> RunStartedUpdate : publishes
-    TelemetryPublisher ..> TelemetryUpdate : publishes
-    TelemetryPublisher ..> RunFinishedUpdate : publishes
-    TelemetryPublisher ..> RunStatusUpdate : publishes lifecycle state
+    MqttMessagePublisherAdapter ..|> MessagePublisher : implements
 ```
 
 Fonte: Elaborado pelos autores (2026).
 
 #### Contratos MQTT de comandos e eventos
 
-O backend publica comandos de controle; o robô publica confirmações e dados da execução. O `runId` é gerado pelo backend ao aceitar o início e precisa ser devolvido pelo robô em todas as mensagens daquela tentativa. O campo `eventId` identifica cada mensagem MQTT; timestamps seguem UTC no formato ISO 8601.
+O backend publica comandos de controle; o robô publica confirmações e dados da execução. `runId` é um inteiro sequencial gerado pelo backend ao aceitar o início (1, 2, 3...) e precisa ser devolvido pelo robô em todas as mensagens daquela tentativa. `eventId` também é inteiro sequencial, incrementado pelo emissor a cada mensagem MQTT. Ambos são enviados como números JSON, sem aspas. `sequence` continua sendo a contagem específica das amostras de telemetria. Timestamps seguem UTC no formato ISO 8601.
 
 Comandos publicados pelo backend:
 
 | Comando | Tópico | Campos do payload |
 |---|---|---|
-| `run.start` | `ratocego/commands/run/start` | `schemaVersion`, `eventId`, `runId`, `mazeType`, `timestamp` |
-| `run.interrupt` | `ratocego/commands/run/interrupt` | `schemaVersion`, `eventId`, `runId`, `timestamp` |
+| `run.start` | `ratocego/commands/run/start` | `eventId`, `runId`, `mazeType`, `timestamp` |
+| `run.interrupt` | `ratocego/commands/run/interrupt` | `eventId`, `runId`, `timestamp` |
 
 Eventos publicados pelo robô e recebidos pelo backend:
 
 | Evento | Tópico | Campos do payload |
 |---|---|---|
-| `run.started` | `ratocego/runs/{runId}/started` | `schemaVersion`, `eventId`, `runId`, `timestamp`, `mazeRows`, `mazeColumns` |
-| `telemetry.sample` | `ratocego/runs/{runId}/telemetry` | `schemaVersion`, `eventId`, `runId`, `sequence`, `timestamp`, `position` (`row`, `column`, `heading`), `distanceTravelledMeters`, `currentSpeedMetersPerSecond`, `batteryVoltageVolts`, `currentMilliAmps` |
-| `run.finished` | `ratocego/runs/{runId}/finished` | `schemaVersion`, `eventId`, `runId`, `timestamp`, `status`, `challengeCompleted` |
-| `run.interrupted` | `ratocego/runs/{runId}/interrupted` | `schemaVersion`, `eventId`, `runId`, `timestamp` |
+| `run.started` | `ratocego/runs/{runId}/started` | `eventId`, `runId`, `timestamp`, `mazeRows`, `mazeColumns` |
+| `telemetry.sample` | `ratocego/runs/{runId}/telemetry` | `eventId`, `runId`, `sequence`, `timestamp`, `position` (`row`, `column`, `heading`), `distanceTravelledMeters`, `currentSpeedMetersPerSecond`, `batteryVoltageVolts`, `currentMilliAmps` |
+| `run.finished` | `ratocego/runs/{runId}/finished` | `eventId`, `runId`, `timestamp`, `status`, `challengeCompleted` |
+| `run.interrupted` | `ratocego/runs/{runId}/interrupted` | `eventId`, `runId`, `timestamp` |
 
 O robô publica `run.started` somente quando tiver aceitado o comando e efetivamente iniciado a tentativa. `run.interrupted` confirma que a navegação foi interrompida; o recebimento do comando pelo broker, por si só, não é confirmação de parada. Se `run.finished` chegar enquanto a interrupção estiver pendente, o evento de término recebido do robô define o resultado final. O backend só processa amostras cujo `runId` corresponda à tentativa atual e que tenham chegado após a confirmação de início; mensagens de outra tentativa ou recebidas após um estado terminal não alteram a execução atual. Uma nova tentativa só pode ser solicitada depois que a anterior estiver em estado terminal. `sequence` começa em 1 e cresce a cada amostra, permitindo detectar duplicatas e lacunas. `row` e `column` usam índices começando em zero; `heading` aceita `NORTH`, `EAST`, `SOUTH` ou `WEST`. `distanceTravelledMeters` contém a distância acumulada desde o início da corrida.
 
@@ -510,9 +462,8 @@ Exemplo de comando de início publicado pelo backend:
 
 ```json
 {
-  "schemaVersion": 1,
-  "eventId": "6d744c8b-0157-4f1b-8a32-64d5dbf5520d",
-  "runId": "31d9fc40-faf4-45b2-9980-b86437de6211",
+  "eventId": 1,
+  "runId": 1,
   "mazeType": "GRID_8X4",
   "timestamp": "2026-09-22T14:30:00.000Z"
 }
@@ -522,9 +473,8 @@ Exemplo de comando de interrupção publicado pelo backend:
 
 ```json
 {
-  "schemaVersion": 1,
-  "eventId": "70423732-439f-49aa-b742-04b8c3b85c9e",
-  "runId": "31d9fc40-faf4-45b2-9980-b86437de6211",
+  "eventId": 2,
+  "runId": 1,
   "timestamp": "2026-09-22T14:30:05.000Z"
 }
 ```
@@ -533,9 +483,8 @@ Exemplo de confirmação de interrupção publicada pelo robô:
 
 ```json
 {
-  "schemaVersion": 1,
-  "eventId": "7064f529-2de3-44d7-8b1a-5602756279bd",
-  "runId": "31d9fc40-faf4-45b2-9980-b86437de6211",
+  "eventId": 3,
+  "runId": 1,
   "timestamp": "2026-09-22T14:30:05.400Z"
 }
 ```
@@ -544,9 +493,8 @@ Exemplo de amostra recebida:
 
 ```json
 {
-  "schemaVersion": 1,
-  "eventId": "bcb2d7a0-e8b7-4d60-8914-3c8e17ff28a3",
-  "runId": "31d9fc40-faf4-45b2-9980-b86437de6211",
+  "eventId": 4,
+  "runId": 1,
   "sequence": 12,
   "timestamp": "2026-09-22T14:30:05.200Z",
   "position": { "row": 0, "column": 2, "heading": "EAST" },
@@ -559,25 +507,22 @@ Exemplo de amostra recebida:
 
 #### Atualizações enviadas ao frontend via WebSocket
 
-O backend envia atualizações JSON pelo endpoint `/ws/telemetry`. O campo `eventType` permite ao frontend distinguir solicitações pendentes de estados confirmados. `RunStatusUpdate` informa pedido de início, falha no início, pedido de interrupção e confirmação de interrupção; `RunStartedUpdate` confirma a abertura e as dimensões da corrida; `TelemetryUpdate` fornece o estado ao vivo; `RunFinishedUpdate` entrega o resumo final. `runId` permite ao cliente associar as mensagens à tentativa correspondente. A API REST responde ao pedido de início/interrupção com a tentativa e o estado atual, que pode ainda ser pendente.
+O backend aceita a conexão STOMP no endpoint `/ws` e envia cada tipo de atualização em um destino próprio. O destino identifica o tipo da mensagem, então os payloads não precisam de `eventType`. O frontend assina os destinos que deseja consumir:
 
-| `eventType` | Campos enviados |
-|---|---|
-| `RUN_START_REQUESTED` | `schemaVersion`, `eventType`, `runId`, `timestamp`, `status` |
-| `RUN_STARTED` | `schemaVersion`, `eventType`, `runId`, `timestamp`, `mazeRows`, `mazeColumns`, `status` |
-| `RUN_START_FAILED` | `schemaVersion`, `eventType`, `runId`, `timestamp`, `status`, `detail` |
-| `TELEMETRY_UPDATE` | `schemaVersion`, `eventType`, `runId`, `sequence`, `timestamp`, `position`, `distanceTravelledMeters`, `currentSpeedMetersPerSecond`, `averageSpeedMetersPerSecond`, `batteryVoltageVolts`, `currentMilliAmps`, `currentPowerWatts`, `batteryStatus`, `chargeConsumedMilliampHours`, `energyConsumedWattHours`, `elapsedTime` |
-| `RUN_INTERRUPT_REQUESTED` | `schemaVersion`, `eventType`, `runId`, `timestamp`, `status`, `detail` opcional para informar ausência de confirmação |
-| `RUN_INTERRUPTED` | `schemaVersion`, `eventType`, `runId`, `timestamp`, `status` |
-| `RUN_FINISHED` | `schemaVersion`, `eventType`, `runId`, `timestamp`, `status`, `challengeCompleted`, `distanceTravelledMeters`, `averageSpeedMetersPerSecond`, `chargeConsumedMilliampHours`, `energyConsumedWattHours`, `elapsedTime` |
+| Destino STOMP | DTO enviado | Conteúdo |
+|---|---|---|
+| `/topic/run-started` | `RunStartedUpdate` | Confirma o início e informa as dimensões do labirinto. O frontend inicia o contador local ao receber essa mensagem. |
+| `/topic/telemetry` | `TelemetryUpdate` | Atualiza posição, distância, velocidade, tensão, corrente, potência e consumo acumulado. |
+| `/topic/run-finished` | `RunFinishedUpdate` | Envia o estado e o resumo final quando a execução termina. |
+| `/topic/run-interrupted` | `RunInterruptedUpdate` | Confirma a interrupção. O frontend para o contador local ao receber essa mensagem. |
+
+`runId` permite ao cliente associar cada mensagem à execução correspondente. `startedAt` e `finishedAt` são persistidos pelo backend; a duração é calculada como `finishedAt - startedAt` ao consultar o histórico, não é enviada nos updates em tempo real.
 
 Exemplo de atualização ao vivo enviada:
 
 ```json
 {
-  "schemaVersion": 1,
-  "eventType": "TELEMETRY_UPDATE",
-  "runId": "31d9fc40-faf4-45b2-9980-b86437de6211",
+  "runId": 1,
   "sequence": 12,
   "timestamp": "2026-09-22T14:30:05.200Z",
   "position": { "row": 0, "column": 2, "heading": "EAST" },
@@ -589,26 +534,25 @@ Exemplo de atualização ao vivo enviada:
   "batteryStatus": "NORMAL",
   "currentPowerWatts": 2.516,
   "chargeConsumedMilliampHours": 0.49,
-  "energyConsumedWattHours": 0.0036,
-  "elapsedTime": "PT5.2S"
+  "energyConsumedWattHours": 0.0036
 }
 ```
 
-O backend calcula `currentPowerWatts` a partir da tensão e da corrente. Calcula `chargeConsumedMilliampHours` integrando a corrente pelo intervalo entre amostras e `energyConsumedWattHours` integrando tensão × corrente nesse intervalo. A velocidade média é distância acumulada dividida pelo tempo decorrido; no encerramento, o backend salva no resumo de `Run` os valores finais de distância, duração, velocidade média, carga consumida e energia consumida. `elapsedTime` é calculado a partir dos timestamps, não é um campo exigido do firmware. O campo `challengeCompleted` pode ser nulo quando o resultado for desconhecido, por exemplo em uma execução interrompida.
+O backend calcula `currentPowerWatts` a partir da tensão e da corrente. Calcula `chargeConsumedMilliampHours` integrando a corrente pelo intervalo entre amostras e `energyConsumedWattHours` integrando tensão × corrente nesse intervalo. A velocidade média é distância acumulada dividida pelo tempo decorrido; no encerramento, o backend salva no resumo de `Run` os valores finais de distância, duração, velocidade média, carga consumida e energia consumida. A duração da execução é derivada de `finishedAt - startedAt` apenas ao consultar o histórico. O campo `challengeCompleted` pode ser nulo quando o resultado for desconhecido, por exemplo em uma execução interrompida.
 
 #### Aviso de bateria baixa
 
 A tensão já é recebida em cada `TelemetrySamplePayload`; portanto, não haverá tópico MQTT nem evento de entrada exclusivo para bateria baixa. Em cada amostra, `TelemetryService` compara `batteryVoltageVolts` com dois limites configuráveis: tensão abaixo do limite crítico faz o estado entrar em `LOW`; em `LOW`, o estado só volta a `NORMAL` quando a tensão ultrapassa o limite de recuperação, que é superior ao crítico. Igualdade com qualquer limite mantém o estado anterior. Esse intervalo implementa histerese e evita que o aviso oscile quando a tensão varia perto do limite.
 
-O estado calculado é incluído em cada `TelemetryUpdate` no campo `batteryStatus`. O frontend exibe um aviso persistente enquanto o valor for `LOW` e o remove quando voltar a `NORMAL`. O aviso não gera registro nem histórico próprio no banco; as amostras de tensão continuam sendo persistidas como parte da telemetria da execução. Os valores dos dois limites devem ser definidos pela equipe de energia/hardware conforme a bateria utilizada e configurados no backend; não se deve fixar valores arbitrários no código.
+O estado calculado é incluído em cada `TelemetryUpdate` no campo `batteryStatus`. O frontend exibe um aviso persistente enquanto o valor for `LOW` e o remove quando voltar a `NORMAL`. O aviso não gera registro nem histórico próprio no banco; as amostras de tensão continuam sendo persistidas como parte da telemetria da execução. Para a bateria LiPo 2S de 7,4 V nominal, o limite crítico padrão é **6,6 V** (3,3 V por célula, conforme RNF21) e a recuperação ocorre acima de **6,8 V**, mantendo uma margem de histerese. Esses valores são configuráveis por `BATTERY_CRITICAL_VOLTAGE_VOLTS` e `BATTERY_RECOVERY_VOLTAGE_VOLTS`.
 
-No início de cada execução, o monitor começa em `NORMAL` e classifica a primeira amostra recebida. Se essa amostra estiver abaixo do limite crítico, o primeiro `TelemetryUpdate` já informa `LOW`. Se a interface não receber uma amostra por **1 segundo**, mantém a última leitura e o aviso visíveis, mas identificados como desatualizados; não apresenta esses dados como atuais. Quando a telemetria volta a chegar, a interface atualiza a leitura, recalcula o estado e remove a indicação de dado desatualizado.
+Com os dois limites configurados, o monitor começa em `NORMAL` e classifica a primeira amostra recebida; se ela estiver abaixo do limite crítico, o primeiro `TelemetryUpdate` informa `LOW`. Sem limites configurados, `batteryStatus` fica indisponível (`null`). Se a interface não receber uma amostra por **1 segundo**, mantém a última leitura e o aviso visíveis, mas identificados como desatualizados; não apresenta esses dados como atuais. Quando a telemetria volta a chegar, a interface atualiza a leitura, recalcula o estado e remove a indicação de dado desatualizado.
 
 #### Fronteira com o sistema embarcado
 
 Para esta arquitetura, o backend recebe `distanceTravelledMeters` e `position` (`row`, `column`, `heading`) em cada amostra de telemetria. O backend usa a distância recebida e a duração da execução para calcular a velocidade média.
 
-O usuário solicita o início ou a interrupção por `RunController`; `RunService` valida o ciclo, cria o `runId`, registra o estado pendente e solicita a publicação de comando por `RunCommandPublisher`. `MqttRunCommandAdapter` publica o comando no broker. Confirmações MQTT chegam por `TelemetryMqttListener` e são encaminhadas ao serviço de execução/telemetria. As amostras são validadas, associadas ao `runId` e ao labirinto, persistidas pelos repositórios e publicadas por `TelemetryPublisher`; `WebSocketTelemetryAdapter` envia a atualização ao frontend. As consultas históricas seguem de `RunController` para `RunService`, que recupera os dados pelos repositórios e devolve DTOs REST.
+O usuário solicita início e interrupção por `RunController`; `RunLifecycleService` coordena o ciclo e usa `MessagePublisher` para enviar comandos, serializados e publicados pelo `MqttMessagePublisherAdapter`. Os eventos de ciclo chegam por `MqttRunListener`; amostras chegam por `MqttTelemetryListener`. `TelemetryService` interpreta payloads por `MqttPayloadParser`, atualiza o estado, persiste as amostras e publica um `WebSocketUpdateEvent` tipado. Após o commit, `WebSocketUpdateEventListener` encaminha a atualização ao `TelemetryPublisher`; `WebSocketTelemetryAdapter` a envia ao destino STOMP correspondente. As consultas históricas seguem de `RunController` aos serviços e repositórios e devolvem DTOs REST.
 
 `MazeType` é escolhido pelo usuário e enviado no comando de início; dimensões informadas em `run.started` confirmam o labirinto iniciado. `RunStatus` registra solicitações, confirmações e o resultado da execução. Mensagens tardias são associadas pelo `runId` e não podem alterar outra tentativa.
 
@@ -621,34 +565,32 @@ Há uma distinção necessária para o modelo: `Maze` representa um tipo de labi
 
 | Entidade | Atributos principais | Regra |
 |---|---|---|
-| **Maze** | `id` UUID, `type` único, `name`, `rows`, `columns` | Catálogo dos três tipos admitidos. O tipo e as dimensões são cadastrados previamente. |
-| **Run** | `id` UUID (`runId`), `maze_id` FK, `status`, `requested_at`, `started_at`, `finished_at`, `challenge_completed`, `distance_travelled_meters`, `average_speed_meters_per_second`, `charge_consumed_milliamp_hours`, `energy_consumed_watt_hours` | Guarda uma tentativa, seu estado e seu resumo. Valores finais podem ficar nulos enquanto não houver dados suficientes. |
-| **TelemetrySample** | `id`, `run_id` FK, `event_id`, `sequence`, `recorded_at`, `row`, `column`, `heading`, `distance_travelled_meters`, `current_speed_meters_per_second`, `battery_voltage_volts`, `current_milli_amps`, `current_power_watts` | Guarda as medições e posições recebidas em uma tentativa. `UNIQUE(run_id, sequence)` e `UNIQUE(event_id)` evitam duplicação no processamento. |
+| **Run** | `id` BIGINT (`runId`), `status`, `started_at`, `finished_at`, `maze_rows`, `maze_columns`, `challenge_completed`, `distance_travelled_meters`, `average_speed_meters_per_second`, `charge_consumed_milliamp_hours`, `energy_consumed_watt_hours`, `battery_status` e estado da última amostra | Guarda uma tentativa, suas dimensões confirmadas, estado e resumo. Valores ficam nulos enquanto não houver dados suficientes. |
+| **TelemetrySample** | `id` BIGINT, `run_id` BIGINT FK, `event_id` BIGINT, `sequence` BIGINT, `recorded_at`, `position_row`, `position_column`, `heading`, `distance_travelled_meters`, `current_speed_meters_per_second`, `battery_voltage_volts`, `current_milli_amps`, `current_power_watts` | Guarda medições e posição recebidas. Há restrições únicas em `(run_id, sequence)` e `event_id`. |
 
-A posição pode ser incorporada à tabela telemetry_sample, pois seus três atributos (row, column, heading) pertencem a uma amostra específica e não possuem ciclo de vida independente. No modelo de classes, Position continua sendo um objeto de valor.
+A posição é incorporada à tabela `telemetry_samples`, pois seus atributos (`row`, `column`, `heading`) pertencem a uma amostra específica e não possuem ciclo de vida independente. `Position` é um objeto de valor no modelo de classes.
 
 **MER — Modelo Entidade-Relacionamento**
-O Modelo Entidade-Relacionamento (MER) apresenta os principais conceitos de dados do Rato Cego e as relações entre eles. O modelo identifica Labirinto, Execução e Amostra de Telemetria como entidades necessárias para associar cada tentativa ao tipo de labirinto selecionado e registrar o trajeto e as medições produzidas durante a corrida. Nesta visão conceitual, são apresentadas as relações e suas cardinalidades, sem detalhar a estrutura das tabelas do banco de dados.
+O Modelo Entidade-Relacionamento (MER) apresenta os dados persistidos pelo backend: Execução e Amostra de Telemetria. As dimensões confirmadas são armazenadas na execução, e cada amostra referencia sua execução.
 
 <p align="center"><em>Figura 7 – Modelo Entidade-Relacionamento (MER).</em></p>
 
-![Modelo Entidade-Relacionamento](./figs/software_dados/mer.png)
+![Modelo Entidade-Relacionamento](./figs/software_dados/der.svg)
 
-- Um labirinto pode estar associado a várias execuções; cada execução pertence a um labirinto.
-- Uma execução pode registrar várias amostras de telemetria, inclusive no início não for confirmado; cada amostra pertence a uma execução.
+- Uma execução pode registrar zero ou muitas amostras de telemetria; cada amostra pertence a uma execução.
 
-Neste modelo, Labirinto representa o tipo cadastrado ( 4×4 , 8×4 ou 12×4 ), e Execução representa uma tentativa individual.
+`MazeType` identifica a configuração escolhida (`GRID_4X4`, `GRID_8X4` ou `GRID_12X4`); as dimensões recebidas em `run.started` ficam armazenadas na execução.
 
 **DER — Diagrama Entidade-Relacionamento**
-O Diagrama Entidade-Relacionamento (DER) detalha a estrutura de dados proposta para o PostgreSQL a partir das entidades definidas no MER. Ele apresenta os atributos de Labirinto, Execução e Amostra de Telemetria, suas chaves primárias e estrangeiras e as restrições necessárias para manter a integridade dos registros. Essa estrutura permite armazenar os resultados das tentativas e consultar tanto o histórico geral quanto as execuções de um labirinto específico.
+O Diagrama Entidade-Relacionamento (DER) detalha o mapeamento JPA usado pelo PostgreSQL, incluindo chaves, colunas e restrições de unicidade.
 
 <p align="center"><em>Figura 8 – Diagrama Entidade-Relacionamento (DER).</em></p>
 
 ![Diagrama Entidade-Relacionamento](figs/software_dados/der.svg)
 
-Uma tentativa pertence a um tipo de labirinto; um tipo de labirinto pode ter várias tentativas. Uma tentativa pode ter zero ou muitas amostras de telemetria: uma solicitação de início que falhou, por exemplo, pode não ter nenhuma. O trajeto consultado posteriormente é obtido ordenando as posições das amostras pelo campo `sequence`.
+Uma tentativa pode ter zero ou muitas amostras de telemetria. O trajeto é obtido ordenando as posições pelo campo `sequence`.
 
-Os índices propostos são `run(maze_id, requested_at)`, `run(status)` e `telemetry_sample(run_id, sequence)`. A duração é derivada de `started_at` e `finished_at`, portanto não precisa ser armazenada em uma coluna adicional. O banco deve preservar também tentativas com status `FAILED` e `INTERRUPTED`. Quando o resultado do desafio for desconhecido, `challenge_completed` pode ser `NULL`.
+As restrições únicas em `telemetry_samples(run_id, sequence_number)` e `telemetry_samples(event_id)` impedem amostras repetidas. A duração é derivada de `started_at` e `finished_at`; o banco preserva também tentativas `FAILED` e `INTERRUPTED`. Quando o resultado do desafio for desconhecido, `challenge_completed` pode ser `NULL`.
 
 ### 9. Protótipo de Baixa Fidelidade
 
@@ -698,7 +640,7 @@ O protótipo funcional foi desenvolvido com base nos requisitos funcionais que e
 
 **Início da tentativa:** O frontend envia `POST /api/runs` com `mazeType`. O backend valida o tipo de labirinto, impede a criação de outra tentativa enquanto houver uma tentativa não terminal, cria um registro `Run` com status `START_REQUESTED` e publica `run.start` com o `runId`. A resposta HTTP informa o estado pendente. Ao receber `run.started` com o mesmo identificador e dimensões compatíveis com o tipo escolhido, o backend registra `started_at`, muda o status para `IN_PROGRESS` e comunica a confirmação por WebSocket. Se o prazo configurado expirar sem confirmação, registra `FAILED`.
 
-**Recepção da telemetria:** Para cada mensagem `telemetry.sample`, o backend valida a versão do contrato, o `runId`, o estado da tentativa, a sequência e os limites da posição conforme as dimensões confirmadas. Em seguida, persiste a amostra uma única vez, atualiza os indicadores da tentativa e envia `TELEMETRY_UPDATE`. Uma lacuna na sequência é detectada e registrada para diagnóstico; ela não deve ser preenchida com dados inventados.
+**Recepção da telemetria:** Para cada mensagem `telemetry.sample`, o backend valida o formato e os campos obrigatórios do payload, o `runId`, o estado da tentativa, a sequência e os limites da posição conforme as dimensões confirmadas. Em seguida, persiste a amostra uma única vez, atualiza os indicadores da tentativa e envia `TELEMETRY_UPDATE`. Uma lacuna na sequência é detectada e registrada para diagnóstico; ela não deve ser preenchida com dados inventados.
 
 A potência instantânea em watts é calculada multiplicando a tensão pela corrente em ampères. Entre duas amostras válidas, o backend estima a carga consumida integrando a corrente pelo intervalo de tempo e a energia consumida integrando a potência pelo mesmo intervalo. A velocidade média é a distância acumulada dividida pelo tempo transcorrido desde `started_at`. A primeira amostra estabelece a primeira referência temporal; uma única leitura não permite inferir o consumo anterior a ela. A interface deve distinguir uma medição indisponível de um valor igual a zero.
 
