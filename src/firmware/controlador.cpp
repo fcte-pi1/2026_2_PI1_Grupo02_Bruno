@@ -73,7 +73,7 @@ void controladorPID(void) {
   // ==================== MOVIMENTO EM LINHA RETA (FRENTE OU RÉ DE DESATOLAMENTO) ====================
   if (tipo_movimento == TRANSLACIONAL) {
     if (sentido_movimento > 0) {
-      bool usarSensores = modoAteEvento || (setpoint_dist > 80);
+      bool usarSensores = modoAteEvento || modoSaidaCurva || (setpoint_dist > 70);
       int16_t erro_bruto_sensor = usarSensores ? getErroSensores() : 0;
 
       int correcao_sensor = 0;
@@ -225,6 +225,7 @@ void RE(int32_t mm) {
   tipo_movimento = PARADO;
   ignorarParedeFrente = false;
   pararMotores();
+  odometriaRegistrarRecuo(distancia_mm);
   delay(120);
 }
 
@@ -263,7 +264,7 @@ void FRENTE(int32_t mm, bool saidaCurva) {
   tipo_movimento = PARADO;
   modoSaidaCurva = false;
   pararMotores();
-  odometriaRegistrarParadaMovimento();
+  odometriaConcluirTrechoReto();
   delay(150);
 }
 
@@ -299,7 +300,6 @@ void FRENTE_ATE_EVENTO(void) {
   odometriaAtualizarAvanco(distancia_mm);
   tipo_movimento = PARADO;
   pararMotores();
-  odometriaRegistrarParadaMovimento();
 
   bool temParedeFrente  = (paredes & 0b010) != 0;
   bool semParedeDireita = (paredes & 0b001) == 0;
@@ -307,6 +307,7 @@ void FRENTE_ATE_EVENTO(void) {
   if (semParedeDireita && !temParedeFrente && bRodarControle) {
     FRENTE(AVANCO_POS_BORDA, false);
   } else {
+    odometriaConcluirTrechoReto();
     delay(150);
   }
 }
@@ -412,17 +413,18 @@ void curvaPivot(int16_t graus) {
   delay(200);
 }
 
+#define AVANCO_SAIDA_CURVA_ENC_MM 76 // 1 célula física real (~16,5 cm) em HalfQuad
+
 void curva(int16_t graus, bool alinharAtras) {
   curvaPivot(graus);
   if (houveTravamento || !bRodarControle) return;
 
-  int32_t recuo = 0;
   if (alinharAtras && bRodarControle) {
-    recuo = alinharNaParedeTraseira();
+    int32_t recuo = alinharNaParedeTraseira();
+    odometriaDefinirCompensacaoRecuo(recuo);
   }
 
-  odometriaDefinirCompensacaoRecuo(recuo);
-  FRENTE(CELULA + recuo, true);
+  FRENTE(AVANCO_SAIDA_CURVA_ENC_MM, true);
 }
 
 void giro180(void) {

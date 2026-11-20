@@ -55,6 +55,7 @@ static unsigned long g_ultimaTelemetriaMs = 0;
 extern volatile bool bRodarControle;
 extern volatile bool bAguardandoLargada;
 extern volatile bool bParadoPeloBotaoBoot;
+extern volatile uint8_t paredes;
 
 // =============================================================================
 // UTILITÁRIOS DE DATA/HORA UTC (ISO-8601 estritamente crescente)
@@ -509,6 +510,7 @@ static void processarComandoStart(const byte* payload, unsigned int length) {
 
   // Configura odometria e prepara nova execução
   odometriaConfigurarExecucao(rows, cols, startPos);
+  odometriaAjustarOrientacaoLargada(paredes);
 
   portENTER_CRITICAL(&commMux);
   g_runIdAtual = runId;

@@ -128,3 +128,29 @@ O script [`upload_esp32.ps1`](upload_esp32.ps1) mapeia automaticamente uma unida
 | **Encoder Direito** | `C1_ENC_D` / `C2_ENC_D` | `GPIO 25` / `GPIO 26` |
 | **Sensor Elétrico INA219 (I²C)** | `SDA` / `SCL` | `GPIO 21` / `GPIO 22` |
 | **Interface Local** | Botão `BOOT` / LED Azul | `GPIO 0` / `GPIO 2` |
+
+---
+
+## 7. Alterações Recentes e Pendências Conhecidas
+
+### Alterações aplicadas nesta etapa
+- **Calibração da odometria para encoders em `HalfQuad` ([`odometria.cpp`](odometria.cpp)):**
+  - Como `initEncoders()` opera em `attachHalfQuad` (`2x`) enquanto `CNT_POR_1000MM = 4341` em `controlador.h` foi dimensionado para `FullQuad` (`4x`), a odometria foi calibrada com `PASSO_CELULA_ENC_MM = 72` (`16,5 cm` físicos por célula) e `ESCALA_DISTANCIA_REAL = 165.0f / 72.0f` para corrigir distância (`m`), velocidade (`m/s`) e avanço de células em linha reta.
+- **Saída de curva calibrada para 1 célula real ([`controlador.cpp`](controlador.cpp)):**
+  - `AVANCO_SAIDA_CURVA_ENC_MM = 76` em `curva()` (mantendo `usarSensores` ativo via `modoSaidaCurva`), evitando que o robô avance 2 células sem monitorar aberturas laterais após girar 90°.
+- **Consolidação imediata ao fim de cada trecho reto (`odometriaConcluirTrechoReto`) e compensação do pivô sem ré ([`odometria.cpp`](odometria.cpp), [`controlador.cpp`](controlador.cpp)):**
+  - Consolida a célula final assim que `FRENTE` / `FRENTE_ATE_EVENTO` para os motores (eliminando o atraso de `~2 s` causado por `TEMPO_PAUSA_ANTES_CURVA_MS`).
+  - Em curvas de 90° **sem ré** (`curva(±90, false)`), contabiliza `30` unidades de avanço longitudinal ganho pelo pivô de uma roda (`curvaPivot`), zerando esse offset quando há alinhamento de ré (`alinharNaParedeTraseira()`).
+  - Limita o desconto de `RE()` em travamentos (`<= 10` unidades) e filtra giros de realinhamento imediatamente após `tratarTravamento()` para não desorientar `g_heading`.
+- **Ajuste automático de orientação na largada (`odometriaAjustarOrientacaoLargada`):**
+  - Mantém `WEST` em `bottom_right` e `EAST` em `bottom_left`, ajustando para `NORTH` automaticamente caso os sensores laterais detectem o robô apontando para cima na célula inicial.
+
+### Falhas conhecidas e itens pendentes para próximos testes
+1. **Validação em pista das curvas sem ré (`curva(±90, false)`):**
+   - A compensação de `30` unidades do pivô sem ré e a consolidação imediata em `odometriaConcluirTrechoReto()` já foram compiladas e gravadas no ESP32, mas o teste completo em pista foi interrompido por descarga da bateria na Execução `#75`. **Pendente:** testar com bateria carregada (selecionando `Inferior direito` / `bottom_right` na interface para a largada padrão do labirinto) e confirmar o reconhecimento de todas as células pós-curva.
+2. **Sensor elétrico INA219 físico sem resposta no barramento I²C:**
+   - O scan I²C em `SDA=21 / SCL=22` (e invertido `22 / 21`) não recebeu ACK do módulo INA219 físico. Enquanto o hardware não responde, o firmware envia uma estimativa dinâmica de bateria LiPo 2S. **Pendente:** revisar soldas, alimentação (`VCC`/`GND`) e trilhas `SDA`/`SCL` do módulo INA219 na placa.
+3. **Leitura precoce da parede frontal (`FRONTAL_TH = 2200`) em finais de corredor:**
+   - Em alguns cantos após corredores de 3 células, `FRONTAL < 2200` para o robô alguns milímetros antes de o sensor lateral liberar a abertura do canto, fazendo o robô ler `0b111` (beco sem saída) e executar `giro180()` em vez da curva de 90°. **Pendente:** avaliar ajuste fino de `FRONTAL_TH` / `LATERAL_TH` em [`sensores.h`](sensores.h) com a bateria carregada.
+4. **Queda de tensão (*brownout*) do ESP32 com bateria fraca:**
+   - Quando a bateria descarrega (velocidade caindo de `~0,30 m/s` para `< 0,11 m/s`), o pico de corrente dos motores nas curvas (`PWM = 120`) faz a entrada do regulador LM7805 cair abaixo de `~6,8 V`, derrubando a conexão Wi-Fi/MQTT do ESP32. **Recomendação:** recarregar a bateria antes de novas baterias de testes e considerar capacitor de desacoplamento adicional na linha de `5 V` do ESP32.

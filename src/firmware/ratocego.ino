@@ -109,6 +109,7 @@ void loop() {
   // Novo comando start recebido via MQTT: reseta encoders/controlador imediatamente
   if (mqttConsumirInicioRemoto()) {
     resetControlador();
+    odometriaAjustarOrientacaoLargada(paredes);
   }
 
   // Aguarda soltar o botão BOOT e dá tempo de tirar a mão de cima dos sensores
@@ -129,6 +130,7 @@ void loop() {
     resetControlador();
     OdometriaSnapshot snapAtual = odometriaObterSnapshot(false);
     odometriaConfigurarExecucao(snapAtual.mazeRows, snapAtual.mazeCols, snapAtual.startPos);
+    odometriaAjustarOrientacaoLargada(paredes);
     bAguardandoLargada = false;
     delay(30);
 

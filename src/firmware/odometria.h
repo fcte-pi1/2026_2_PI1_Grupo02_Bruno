@@ -31,31 +31,43 @@ struct OdometriaSnapshot {
   bool poseAlterada;
 };
 
-// Configura uma nova execução: zera odometria, posiciona no canto inicial e define a célula objetivo oposta.
+// Inicializa/reseta a odometria para uma nova execução do labirinto (1..18 x 1..18)
 void odometriaConfigurarExecucao(int rows, int cols, StartPosition startPos);
 
-// Define compensação de recuo para o próximo movimento FRENTE (usado após alinharNaParedeTraseira).
+// Ajusta automaticamente a orientação inicial na largada caso os sensores IR
+// indiquem que o robô foi posicionado apontando para NORTH no canto inicial
+void odometriaAjustarOrientacaoLargada(uint8_t paredesIniciais);
+
+// Registra uma compensação de recuo (ex.: alinhamento de ré na parede traseira)
+// para que o avanço seguinte não duplique a distância já percorrida
 void odometriaDefinirCompensacaoRecuo(int32_t compensacaoRecuoMm);
 
-// Chamado no início de cada movimento translacional para frente (FRENTE / FRENTE_ATE_EVENTO).
+// Subtrai uma fração limitada do acumulador de célula após manobra de desatolamento (RE)
+void odometriaRegistrarRecuo(int32_t recuoMm);
+
+// Notifica início de um novo comando de avanço retilíneo (após resetControlador)
 void odometriaIniciarMovimentoFrente(void);
 
-// Chamado continuamente durante o avanço reto com a distância atual do movimento em mm.
+// Atualiza o progresso linear durante FRENTE / FRENTE_ATE_EVENTO a partir de distancia_mm
 void odometriaAtualizarAvanco(int32_t distanciaMovimentoMm);
 
-// Zera a velocidade instantânea quando o robô para um movimento.
+// Notifica parada do movimento translacional (ex.: em travamento)
 void odometriaRegistrarParadaMovimento(void);
 
-// Atualiza orientação discreta após uma curva completada (-90 = direita, +90 = esquerda, 180 = meia-volta).
+// Consolida imediatamente a célula final ao término normal de FRENTE / FRENTE_ATE_EVENTO
+// (antes da pausa de 1500 ms da curva) caso o acumulado residual seja >= meia célula (35 unid)
+void odometriaConcluirTrechoReto(void);
+
+// Atualiza a orientação após curvaPivot(graus) ou giro180()
 void odometriaAplicarGiro(int16_t graus);
 
-// Indica se o robô atingiu a célula diagonalmente oposta ao canto inicial.
+// Verifica se a célula objetivo do labirinto foi alcançada
 bool odometriaObjetivoAlcancado(void);
 
-// Lê um snapshot consistente (thread-safe entre Core 0 e Core 1).
-// Se limparFlagAlterada = true, limpa a flag poseAlterada atomicamente.
+// Obtém cópia thread-safe do estado atual (e opcionalmente limpa a flag poseAlterada)
 OdometriaSnapshot odometriaObterSnapshot(bool limparFlagAlterada = false);
 
+// Utilitários de conversão para string (compatíveis com o backend)
 const char* headingToString(Heading heading);
 const char* startPositionToString(StartPosition pos);
 
