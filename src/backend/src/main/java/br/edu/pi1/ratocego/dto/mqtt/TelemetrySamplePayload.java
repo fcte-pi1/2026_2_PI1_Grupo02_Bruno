@@ -18,5 +18,20 @@ public record TelemetrySamplePayload(
         @NotNull @DecimalMin("0.0") BigDecimal distanceTravelledMeters,
         @NotNull @DecimalMin("0.0") BigDecimal currentSpeedMetersPerSecond,
         @NotNull @DecimalMin("0.0") BigDecimal batteryVoltageVolts,
-        @NotNull @DecimalMin("0.0") BigDecimal currentMilliAmps) {
+        @NotNull @DecimalMin("0.0") BigDecimal currentMilliAmps,
+        @DecimalMin("0.0") BigDecimal currentPowerWatts) {
+
+    public TelemetrySamplePayload(
+            long eventId,
+            long runId,
+            long sequence,
+            Instant timestamp,
+            Position position,
+            BigDecimal distanceTravelledMeters,
+            BigDecimal currentSpeedMetersPerSecond,
+            BigDecimal batteryVoltageVolts,
+            BigDecimal currentMilliAmps) {
+        this(eventId, runId, sequence, timestamp, position, distanceTravelledMeters,
+                currentSpeedMetersPerSecond, batteryVoltageVolts, currentMilliAmps, null);
+    }
 }

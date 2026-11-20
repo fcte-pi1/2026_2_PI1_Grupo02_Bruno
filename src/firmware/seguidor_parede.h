@@ -7,6 +7,8 @@
 #include "motores.h"
 #include "sensores.h"
 #include "controlador.h"
+#include "odometria.h"
+#include "wifi_controle.h"
 #include <stdint.h>
                                                                               // UTILIZAR SOMENTE CASO SEJA NECESSÁRIO INVERTER QUAL PAREDE SEGUIR;
 //constantes para definir qual parede o robô vai seguir;

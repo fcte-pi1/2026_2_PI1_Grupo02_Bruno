@@ -3,10 +3,12 @@ package br.edu.pi1.ratocego.service;
 import br.edu.pi1.ratocego.dto.mqtt.RunFinishedPayload;
 import br.edu.pi1.ratocego.dto.mqtt.RunInterruptedPayload;
 import br.edu.pi1.ratocego.dto.mqtt.RunStartedPayload;
+import br.edu.pi1.ratocego.dto.mqtt.StartRunCommand;
 import br.edu.pi1.ratocego.dto.mqtt.InterruptRunCommand;
 import br.edu.pi1.ratocego.dto.websocket.RunCommandStatusUpdate;
 import br.edu.pi1.ratocego.model.Run;
 import br.edu.pi1.ratocego.model.RunStatus;
+import br.edu.pi1.ratocego.model.StartPosition;
 import br.edu.pi1.ratocego.repository.RunRepository;
 import br.edu.pi1.ratocego.util.MqttPayloadParser;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,6 +71,36 @@ class RunLifecycleServiceTest {
     }
 
     @Test
+    void startWithCustomDimensionsAndStartPositionPersistsAndPublishesCommand() throws Exception {
+        when(runs.findByStatusIn(any())).thenReturn(java.util.List.of());
+        when(runs.save(any())).thenAnswer(invocation -> {
+            Run saved = invocation.getArgument(0);
+            saved.setId(22L);
+            return saved;
+        });
+        when(objectMapper.writeValueAsString(any())).thenReturn("custom-start-json");
+
+        Run run = service.start(18, 18, StartPosition.BOTTOM_RIGHT);
+
+        assertEquals(18, run.getMazeRows());
+        assertEquals(18, run.getMazeColumns());
+        assertEquals(StartPosition.BOTTOM_RIGHT, run.getStartPosition());
+        verify(objectMapper).writeValueAsString(org.mockito.ArgumentMatchers.argThat(payload ->
+                payload instanceof StartRunCommand command
+                        && command.runId() == 22L
+                        && command.mazeType() == null
+                        && command.mazeRows() == 18
+                        && command.mazeColumns() == 18
+                        && command.startPosition() == StartPosition.BOTTOM_RIGHT));
+    }
+
+    @Test
+    void startRejectsDimensionsOutside1To18() {
+        assertThrows(IllegalArgumentException.class, () -> service.start(19, 4, StartPosition.BOTTOM_LEFT));
+        assertThrows(IllegalArgumentException.class, () -> service.start(4, 0, StartPosition.BOTTOM_RIGHT));
+    }
+
+    @Test
     void startTimeoutMarksRequestFailed() {
         Run run = activeRun(Instant.now().minusSeconds(6), RunStatus.START_REQUESTED);
         run.setStartRequestedAt(Instant.now().minusSeconds(6));
@@ -92,6 +124,22 @@ class RunLifecycleServiceTest {
         verify(events).publishEvent(command.capture());
         assertEquals("ratocego/commands/run/interrupt", command.getValue().topic());
         assertEquals("interrupt-json", command.getValue().payload());
+        verify(events).publishEvent(any(WebSocketUpdateEvent.class));
+    }
+
+    @Test
+    void interruptRetryAfterTimeoutCompletesInterruptionImmediately() throws Exception {
+        Run run = activeRun(Instant.now().minusSeconds(5), RunStatus.INTERRUPT_REQUESTED);
+        run.setInterruptRequestedAt(Instant.now().minusSeconds(3));
+        run.setInterruptTimeoutWarned(true);
+        when(runs.findById(42L)).thenReturn(Optional.of(run));
+        when(objectMapper.writeValueAsString(any())).thenReturn("interrupt-retry-json");
+
+        Run updated = service.interrupt(42L);
+
+        assertEquals(RunStatus.INTERRUPTED, updated.getStatus());
+        assertTrue(updated.getFinishedAt() != null);
+        verify(events).publishEvent(any(MqttCommandPublicationRequested.class));
         verify(events).publishEvent(any(WebSocketUpdateEvent.class));
     }
 

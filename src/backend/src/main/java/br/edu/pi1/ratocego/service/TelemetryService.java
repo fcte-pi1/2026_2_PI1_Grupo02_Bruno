@@ -114,6 +114,9 @@ public class TelemetryService {
     }
 
     private BigDecimal calculatePower(TelemetrySamplePayload sample) {
+        if (sample.currentPowerWatts() != null) {
+            return sample.currentPowerWatts();
+        }
         return sample.batteryVoltageVolts().multiply(sample.currentMilliAmps())
                 .divide(THOUSAND, CALCULATION_CONTEXT);
     }

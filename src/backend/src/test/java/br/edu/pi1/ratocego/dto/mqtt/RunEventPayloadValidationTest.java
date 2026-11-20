@@ -39,6 +39,14 @@ class RunEventPayloadValidationTest {
     }
 
     @Test
+    void rejectsMazeDimensionsAbove18InRunStartedPayload() {
+        var violations = validator.validate(new RunStartedPayload(1, 1, java.time.Instant.now(), 19, 19));
+
+        assertTrue(hasViolation(violations, "mazeRows"));
+        assertTrue(hasViolation(violations, "mazeColumns"));
+    }
+
+    @Test
     void rejectsIncompleteRunFinishedPayload() {
         var violations = validator.validate(new RunFinishedPayload(0, 0, null, null, null));
 

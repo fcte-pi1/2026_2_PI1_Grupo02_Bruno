@@ -192,6 +192,21 @@ class TelemetryServiceTest {
     }
 
     @Test
+    void usesDirectIna219PowerReadingWhenProvidedInPayload() {
+        Run run = activeRun();
+        var payload = new TelemetrySamplePayload(10, 1, 1, Instant.parse("2026-10-09T12:00:01Z"),
+                new Position(0, 0, Heading.EAST), new BigDecimal("1.0"), BigDecimal.ONE,
+                new BigDecimal("7.4"), new BigDecimal("250"), new BigDecimal("1.92"));
+        stubAcceptedSample(payload, run);
+
+        service.processSample("json");
+
+        assertEquals(0, new BigDecimal("1.92").compareTo(run.getLastPowerWatts()));
+        verify(samples).save(any());
+        verify(events).publishEvent(any(WebSocketUpdateEvent.class));
+    }
+
+    @Test
     void rejectsNonIncreasingTimestamps() {
         Run run = activeRun();
         run.setLastSampleAt(Instant.parse("2026-10-09T12:00:02Z"));

@@ -1,5 +1,5 @@
 import type { Run, TelemetrySample } from '../models/run'
-import type { MazeSize } from '../types/maze'
+import type { MazeSize, StartPosition } from '../types/maze'
 
 async function postRunAction(path: string, body?: unknown): Promise<Run> {
   const response = await fetch(path, {
@@ -11,8 +11,14 @@ async function postRunAction(path: string, body?: unknown): Promise<Run> {
   return response.json()
 }
 
-export function startRun(mazeType: MazeSize): Promise<Run> {
-  return postRunAction('/api/runs', { mazeType })
+export type StartRunPayload = {
+  mazeRows: number
+  mazeColumns: number
+  startPosition: StartPosition
+}
+
+export function startRun(payload: StartRunPayload): Promise<Run> {
+  return postRunAction('/api/runs', payload)
 }
 
 export function interruptRun(runId: number): Promise<Run> {

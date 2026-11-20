@@ -1,6 +1,7 @@
 package br.edu.pi1.ratocego.dto.rest;
 
 import br.edu.pi1.ratocego.model.RunStatus;
+import br.edu.pi1.ratocego.model.StartPosition;
 import lombok.Builder;
 
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ public record RunResponse(
         Duration duration,
         Integer mazeRows,
         Integer mazeColumns,
+        StartPosition startPosition,
         Boolean challengeCompleted,
         BigDecimal distanceTravelledMeters,
         BigDecimal averageSpeedMetersPerSecond,

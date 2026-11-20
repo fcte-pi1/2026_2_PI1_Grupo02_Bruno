@@ -1,4 +1,5 @@
 #include "controlador.h"
+#include "odometria.h"
 
 int32_t distancia_mm = 0;
 int32_t distancia_deg = 0;
@@ -232,6 +233,7 @@ void FRENTE(int32_t mm, bool saidaCurva) {
 
   houveTravamento = false;
   resetControlador();
+  odometriaIniciarMovimentoFrente();
   modoAteEvento = false;
   modoSaidaCurva = saidaCurva;
   giroDuasRodas = false;
@@ -244,20 +246,24 @@ void FRENTE(int32_t mm, bool saidaCurva) {
   int32_t ultimaDistancia = distancia_mm;
 
   while (!isFinalMovimento()) {
+    odometriaAtualizarAvanco(distancia_mm);
     if (abs(distancia_mm - ultimaDistancia) >= 2) {
       ultimaDistancia = distancia_mm;
       tempoUltimoMovimento = millis();
     } else if (millis() - tempoUltimoMovimento >= TEMPO_TRAVAMENTO_MS) {
       modoSaidaCurva = false;
+      odometriaRegistrarParadaMovimento();
       tratarTravamento();
       return;
     }
     delay(2);
   }
 
+  odometriaAtualizarAvanco(distancia_mm);
   tipo_movimento = PARADO;
   modoSaidaCurva = false;
   pararMotores();
+  odometriaRegistrarParadaMovimento();
   delay(150);
 }
 
@@ -266,6 +272,7 @@ void FRENTE_ATE_EVENTO(void) {
 
   houveTravamento = false;
   resetControlador();
+  odometriaIniciarMovimentoFrente();
   modoAteEvento = true;
   modoSaidaCurva = false;
   giroDuasRodas = false;
@@ -277,18 +284,22 @@ void FRENTE_ATE_EVENTO(void) {
   int32_t ultimaDistancia = distancia_mm;
 
   while (!isFinalMovimento()) {
+    odometriaAtualizarAvanco(distancia_mm);
     if (abs(distancia_mm - ultimaDistancia) >= 2) {
       ultimaDistancia = distancia_mm;
       tempoUltimoMovimento = millis();
     } else if (millis() - tempoUltimoMovimento >= TEMPO_TRAVAMENTO_MS) {
+      odometriaRegistrarParadaMovimento();
       tratarTravamento();
       return;
     }
     delay(2);
   }
 
+  odometriaAtualizarAvanco(distancia_mm);
   tipo_movimento = PARADO;
   pararMotores();
+  odometriaRegistrarParadaMovimento();
 
   bool temParedeFrente  = (paredes & 0b010) != 0;
   bool semParedeDireita = (paredes & 0b001) == 0;
@@ -395,6 +406,9 @@ void curvaPivot(int16_t graus) {
 
   tipo_movimento = PARADO;
   pararMotores();
+  if (!houveTravamento && bRodarControle) {
+    odometriaAplicarGiro(graus);
+  }
   delay(200);
 }
 
@@ -407,6 +421,7 @@ void curva(int16_t graus, bool alinharAtras) {
     recuo = alinharNaParedeTraseira();
   }
 
+  odometriaDefinirCompensacaoRecuo(recuo);
   FRENTE(CELULA + recuo, true);
 }
 
@@ -480,6 +495,9 @@ void giro180(void) {
   tipo_movimento = PARADO;
   giroDuasRodas = false;
   pararMotores();
+  if (!houveTravamento && bRodarControle) {
+    odometriaAplicarGiro(180);
+  }
   delay(100);
 
   // 3. No beco sem saída há parede atrás e nos dois lados: alinha com curso maior antes de sair

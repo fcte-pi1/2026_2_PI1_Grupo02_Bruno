@@ -49,7 +49,12 @@ public class RunQueryService {
     // Execuções de um tipo de labirinto, identificado pelas dimensões gravadas na execução
     @Transactional(readOnly = true)
     public List<RunResponse> findRunsByMaze(MazeType mazeType) {
-        return runRepository.findByMazeRowsAndMazeColumns(MAZE_ROWS, mazeColumns(mazeType), OLDEST_FIRST).stream()
+        return findRunsByDimensions(MAZE_ROWS, mazeColumns(mazeType));
+    }
+
+    @Transactional(readOnly = true)
+    public List<RunResponse> findRunsByDimensions(int mazeRows, int mazeColumns) {
+        return runRepository.findByMazeRowsAndMazeColumns(mazeRows, mazeColumns, OLDEST_FIRST).stream()
                 .map(runMapper::toRunResponse)
                 .toList();
     }

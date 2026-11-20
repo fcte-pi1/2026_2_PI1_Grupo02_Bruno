@@ -11,5 +11,6 @@
   "distanceTravelledMeters": 0.25,
   "currentSpeedMetersPerSecond": 0.5,
   "batteryVoltageVolts": 7.4,
-  "currentMilliAmps": 250
+  "currentMilliAmps": 250,
+  "currentPowerWatts": 1.85
 }
