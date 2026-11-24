@@ -16,6 +16,7 @@ public record TelemetrySampleResponse(
         BigDecimal distanceTravelledMeters,
         BigDecimal currentSpeedMetersPerSecond,
         BigDecimal batteryVoltageVolts,
-        BigDecimal currentMilliAmps
+        BigDecimal currentMilliAmps,
+        BigDecimal currentPowerWatts
 ) {
 }

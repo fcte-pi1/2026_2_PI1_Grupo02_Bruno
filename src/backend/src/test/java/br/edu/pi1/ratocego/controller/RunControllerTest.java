@@ -6,6 +6,7 @@ import br.edu.pi1.ratocego.model.Heading;
 import br.edu.pi1.ratocego.model.MazeType;
 import br.edu.pi1.ratocego.model.RunStatus;
 import br.edu.pi1.ratocego.model.Run;
+import br.edu.pi1.ratocego.model.StartPosition;
 import br.edu.pi1.ratocego.service.RunQueryService;
 import br.edu.pi1.ratocego.service.RunLifecycleService;
 import br.edu.pi1.ratocego.mapper.RunMapper;
@@ -251,6 +252,53 @@ class RunControllerTest {
                 .andExpect(jsonPath("$[1].sequence").value(2))
                 .andExpect(jsonPath("$[1].column").value(1))
                 .andExpect(jsonPath("$[1].currentSpeedMetersPerSecond").value(nullValue()));
+    }
+
+    @Test
+    void startRunAcceptsCustomDimensionsUpTo18x18AndStartPosition() throws Exception {
+        Run run = new Run();
+        run.setId(21L);
+        run.setStatus(RunStatus.START_REQUESTED);
+        run.setMazeRows(18);
+        run.setMazeColumns(18);
+        run.setStartPosition(StartPosition.BOTTOM_RIGHT);
+        when(runLifecycleService.start(18, 18, StartPosition.BOTTOM_RIGHT)).thenReturn(run);
+        when(runMapper.toRunResponse(run)).thenReturn(RunResponse.builder()
+                .id(21)
+                .status(RunStatus.START_REQUESTED)
+                .mazeRows(18)
+                .mazeColumns(18)
+                .startPosition(StartPosition.BOTTOM_RIGHT)
+                .build());
+
+        mockMvc.perform(post("/api/runs").contentType(APPLICATION_JSON)
+                        .content("{\"mazeRows\":18,\"mazeColumns\":18,\"startPosition\":\"bottom_right\"}"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.id").value(21))
+                .andExpect(jsonPath("$.mazeRows").value(18))
+                .andExpect(jsonPath("$.mazeColumns").value(18))
+                .andExpect(jsonPath("$.startPosition").value("bottom_right"));
+    }
+
+    @Test
+    void startRunRejectsDimensionsAbove18() throws Exception {
+        mockMvc.perform(post("/api/runs").contentType(APPLICATION_JSON)
+                        .content("{\"mazeRows\":19,\"mazeColumns\":4,\"startPosition\":\"bottom_left\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getRunsByCustomDimensionsReturnsMatchingRuns() throws Exception {
+        when(runQueryService.findRunsByDimensions(10, 10)).thenReturn(List.of(
+                RunResponse.builder().id(8).status(RunStatus.COMPLETED).mazeRows(10).mazeColumns(10)
+                        .startPosition(StartPosition.BOTTOM_LEFT).build()));
+
+        mockMvc.perform(get("/api/runs").param("mazeRows", "10").param("mazeColumns", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].mazeRows").value(10))
+                .andExpect(jsonPath("$[0].mazeColumns").value(10))
+                .andExpect(jsonPath("$[0].startPosition").value("bottom_left"));
     }
 
     @Test

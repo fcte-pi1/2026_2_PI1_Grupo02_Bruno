@@ -1,20 +1,21 @@
-import { useEffect, useState } from 'react'
-import { useTelemetryRealtime } from './realtime/useTelemetryRealtime'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTelemetryRealtime, type RealtimeMessage } from './realtime/useTelemetryRealtime'
 import { AppHeader } from './components/AppHeader'
 import { ConnectionStatus } from './components/ConnectionStatus'
 import { ExecutionControls } from './components/ExecutionControls'
 import { ExecutionMetrics } from './components/ExecutionMetrics'
 import { MazePanel } from './components/MazePanel'
-import { mazeOptions } from './types/maze'
-import type { MazeDimensions, MazeSize, Position } from './types/maze'
+import { clampMazeDimension, getGoalCell } from './types/maze'
+import type { MazeDimensions, Position, StartPosition } from './types/maze'
 import type { RunResult, Telemetry } from './types/telemetry'
 import { formatElapsedTime } from './utils/format'
 import { fetchActiveRun, fetchRun, fetchRunTelemetry, interruptRun, startRun } from './api/runs'
 
 function App() {
-  const { connected, lastMessageAt, message } = useTelemetryRealtime()
-  const [maze, setMaze] = useState<MazeSize>('GRID_8X4')
-  const [dimensions, setDimensions] = useState<MazeDimensions>(mazeOptions.GRID_8X4)
+  const [mazeRows, setMazeRows] = useState(4)
+  const [mazeColumns, setMazeColumns] = useState(4)
+  const [startPosition, setStartPosition] = useState<StartPosition>('bottom_left')
+  const [dimensions, setDimensions] = useState<MazeDimensions>({ rows: 4, columns: 4, label: '4 × 4' })
   const [route, setRoute] = useState<Position[]>([])
   const [telemetry, setTelemetry] = useState<Telemetry>({})
   const [startedAt, setStartedAt] = useState<number | null>(null)
@@ -24,6 +25,157 @@ function App() {
   const [action, setAction] = useState<'starting' | 'interrupting' | null>(null)
   const [notice, setNotice] = useState('')
   const [interruptRetryAllowed, setInterruptRetryAllowed] = useState(false)
+
+  const runIdRef = useRef<number | null>(runId)
+  runIdRef.current = runId
+  const dimensionsRef = useRef(dimensions)
+  dimensionsRef.current = dimensions
+
+  const handleRealtimeMessage = useCallback((message: RealtimeMessage) => {
+    const activeRunId = runIdRef.current
+
+    if (message.kind === 'started') {
+      const eventRunId = Number(message.payload.runId)
+      if (activeRunId !== null && eventRunId !== activeRunId) return
+      if (Number.isFinite(eventRunId)) {
+        runIdRef.current = eventRunId
+        setRunId(eventRunId)
+      }
+      setAction(null)
+      setNotice('')
+      setInterruptRetryAllowed(false)
+      const rows = Number(message.payload.mazeRows)
+      const columns = Number(message.payload.mazeColumns)
+      const eventStartPos = message.payload.startPosition
+
+      if (rows > 0 && columns > 0) {
+        const nextDimensions = { rows, columns, label: `${columns} × ${rows}` }
+        dimensionsRef.current = nextDimensions
+        setMazeRows(rows)
+        setMazeColumns(columns)
+        setDimensions(nextDimensions)
+      }
+      if (eventStartPos === 'bottom_left' || eventStartPos === 'bottom_right') {
+        setStartPosition(eventStartPos)
+      }
+
+      setRoute([])
+      setTelemetry({})
+      setResult('Em andamento')
+      setStartedAt(Date.now())
+      setElapsed(0)
+      return
+    }
+
+    if (message.kind === 'telemetry') {
+      const sample = message.payload as Telemetry
+      const eventRunId = Number(message.payload.runId)
+      if (!Number.isFinite(eventRunId)) return
+      if (activeRunId !== null && eventRunId !== activeRunId) return
+      if (activeRunId === null) {
+        runIdRef.current = eventRunId
+        setRunId(eventRunId)
+        setResult('Em andamento')
+        setAction(null)
+        setNotice('')
+      }
+      const position = sample.position
+
+      setTelemetry((previous) => ({
+        ...previous,
+        ...sample,
+        averageSpeedMetersPerSecond: sample.averageSpeedMetersPerSecond ?? previous.averageSpeedMetersPerSecond,
+        chargeConsumedMilliampHours: sample.chargeConsumedMilliampHours ?? previous.chargeConsumedMilliampHours,
+        energyConsumedWattHours: sample.energyConsumedWattHours ?? previous.energyConsumedWattHours,
+      }))
+
+      if (isPositionInsideMaze(position, dimensionsRef.current)) {
+        setRoute((currentRoute) => {
+          const previousPosition = currentRoute[currentRoute.length - 1]
+          const positionUnchanged =
+            previousPosition?.row === position.row
+            && previousPosition?.column === position.column
+            && previousPosition?.heading === position.heading
+
+          if (positionUnchanged) return currentRoute
+          if (previousPosition?.row === position.row && previousPosition?.column === position.column) {
+            return [...currentRoute.slice(0, -1), position]
+          }
+          return [...currentRoute, position]
+        })
+      }
+
+      return
+    }
+
+    if (message.kind === 'finished') {
+      if (activeRunId !== null && Number(message.payload.runId) !== activeRunId) return
+      setAction(null)
+      setTelemetry((previous) => ({
+        ...previous,
+        distanceTravelledMeters: typeof message.payload.distanceTravelledMeters === 'number'
+          ? message.payload.distanceTravelledMeters
+          : previous.distanceTravelledMeters,
+        averageSpeedMetersPerSecond: typeof message.payload.averageSpeedMetersPerSecond === 'number'
+          ? message.payload.averageSpeedMetersPerSecond
+          : previous.averageSpeedMetersPerSecond,
+        chargeConsumedMilliampHours: typeof message.payload.chargeConsumedMilliampHours === 'number'
+          ? message.payload.chargeConsumedMilliampHours
+          : previous.chargeConsumedMilliampHours,
+        energyConsumedWattHours: typeof message.payload.energyConsumedWattHours === 'number'
+          ? message.payload.energyConsumedWattHours
+          : previous.energyConsumedWattHours,
+      }))
+      setResult(
+        message.payload.challengeCompleted === true
+          ? 'Sucesso'
+          : message.payload.challengeCompleted === false
+            ? 'Não concluído'
+            : 'Resultado indisponível',
+      )
+      return
+    }
+
+    if (message.kind === 'interrupted') {
+      if (activeRunId !== null && Number(message.payload.runId) !== activeRunId) return
+      setAction(null)
+      setResult('Interrompido')
+      setNotice('')
+      setInterruptRetryAllowed(false)
+      return
+    }
+
+    if (message.kind === 'status') {
+      const eventRunId = Number(message.payload.runId)
+      if (activeRunId !== null && eventRunId !== activeRunId) return
+      const state = String(message.payload.status ?? '').toUpperCase()
+      if (state === 'START_REQUESTED' || state === 'PENDING') {
+        if (Number.isFinite(eventRunId)) {
+          runIdRef.current = eventRunId
+          setRunId(eventRunId)
+        }
+        setResult('Início solicitado')
+        setNotice(String(message.payload.message ?? 'Aguardando confirmação do robô…'))
+        setInterruptRetryAllowed(false)
+      } else if (state === 'INTERRUPT_REQUESTED') {
+        if (Number.isFinite(eventRunId)) {
+          runIdRef.current = eventRunId
+          setRunId(eventRunId)
+        }
+        setResult('Interrupção solicitada')
+        setInterruptRetryAllowed(message.payload.retryAllowed === true)
+        setNotice(String(message.payload.message ?? 'Aguardando confirmação da interrupção…'))
+      } else if (state === 'FAILED') {
+        setResult('Falhou')
+        setAction(null)
+        setNotice(String(message.payload.message ?? 'A execução falhou.'))
+        setInterruptRetryAllowed(false)
+      }
+      if (state === 'INTERRUPT_REQUESTED' && message.payload.retryAllowed === true) setAction(null)
+    }
+  }, [])
+
+  const { connected, lastMessageAt } = useTelemetryRealtime(handleRealtimeMessage)
 
   useEffect(() => {
     let cancelled = false
@@ -51,15 +203,16 @@ function App() {
         setAction(null)
         setRunId(activeRun.id)
         if (activeRun.mazeRows && activeRun.mazeColumns) {
-          const matchingMaze = Object.entries(mazeOptions).find(([, dimensions]) =>
-            dimensions.rows === activeRun.mazeRows && dimensions.columns === activeRun.mazeColumns,
-          )?.[0] as MazeSize | undefined
-          if (matchingMaze) setMaze(matchingMaze)
+          setMazeRows(activeRun.mazeRows)
+          setMazeColumns(activeRun.mazeColumns)
           setDimensions({
             rows: activeRun.mazeRows,
             columns: activeRun.mazeColumns,
             label: `${activeRun.mazeColumns} × ${activeRun.mazeRows}`,
           })
+        }
+        if (activeRun.startPosition === 'bottom_left' || activeRun.startPosition === 'bottom_right') {
+          setStartPosition(activeRun.startPosition)
         }
 
         if (activeRun.status === 'START_REQUESTED') {
@@ -87,13 +240,18 @@ function App() {
         if (cancelled || samples.length === 0) return
         setRoute(samples.map((sample) => ({ row: sample.row, column: sample.column, heading: sample.heading })))
         const latest = samples[samples.length - 1]
-        setTelemetry({
+        setTelemetry((previous) => ({
+          ...previous,
           position: { row: latest.row, column: latest.column, heading: latest.heading },
-          distanceTravelledMeters: latest.distanceTravelledMeters,
-          averageSpeedMetersPerSecond: activeRun.averageSpeedMetersPerSecond ?? undefined,
-          batteryVoltageVolts: latest.batteryVoltageVolts ?? undefined,
-          chargeConsumedMilliampHours: activeRun.chargeConsumedMilliampHours ?? undefined,
-        })
+          distanceTravelledMeters: latest.distanceTravelledMeters ?? activeRun.distanceTravelledMeters ?? previous.distanceTravelledMeters,
+          currentSpeedMetersPerSecond: latest.currentSpeedMetersPerSecond ?? previous.currentSpeedMetersPerSecond,
+          averageSpeedMetersPerSecond: activeRun.averageSpeedMetersPerSecond ?? previous.averageSpeedMetersPerSecond ?? latest.currentSpeedMetersPerSecond ?? undefined,
+          batteryVoltageVolts: latest.batteryVoltageVolts ?? previous.batteryVoltageVolts,
+          currentMilliAmps: latest.currentMilliAmps ?? previous.currentMilliAmps,
+          currentPowerWatts: latest.currentPowerWatts ?? previous.currentPowerWatts,
+          chargeConsumedMilliampHours: activeRun.chargeConsumedMilliampHours ?? previous.chargeConsumedMilliampHours,
+          energyConsumedWattHours: activeRun.energyConsumedWattHours ?? previous.energyConsumedWattHours,
+        }))
       } catch (error) {
         if (!cancelled) setNotice(error instanceof Error ? error.message : 'Não foi possível restaurar a execução ativa.')
       }
@@ -138,6 +296,13 @@ function App() {
       try {
         const run = await fetchRun(activeRunId)
         if (cancelled || !run) return
+        setTelemetry((previous) => ({
+          ...previous,
+          distanceTravelledMeters: run.distanceTravelledMeters ?? previous.distanceTravelledMeters,
+          averageSpeedMetersPerSecond: run.averageSpeedMetersPerSecond ?? previous.averageSpeedMetersPerSecond,
+          chargeConsumedMilliampHours: run.chargeConsumedMilliampHours ?? previous.chargeConsumedMilliampHours,
+          energyConsumedWattHours: run.energyConsumedWattHours ?? previous.energyConsumedWattHours,
+        }))
         if (run.status === 'COMPLETED') {
           setResult(run.challengeCompleted === true
             ? 'Sucesso'
@@ -156,8 +321,10 @@ function App() {
           setNotice('A execução falhou.')
           setInterruptRetryAllowed(false)
         } else if (run.status === 'INTERRUPT_REQUESTED') {
+          const requestTime = run.interruptRequestedAt ? Date.parse(run.interruptRequestedAt) : Number.NaN
+          const retryAllowed = Number.isFinite(requestTime) && Date.now() - requestTime >= 2_000
           setResult('Interrupção solicitada')
-          setInterruptRetryAllowed(false)
+          setInterruptRetryAllowed((previous) => previous || retryAllowed)
         } else if (run.status === 'IN_PROGRESS') {
           const startTime = run.startedAt ? Date.parse(run.startedAt) : Number.NaN
           if (Number.isFinite(startTime)) {
@@ -184,105 +351,28 @@ function App() {
     }
   }, [runId, result])
 
-  useEffect(() => {
-    if (!message) return
-
-    if (message.kind === 'started') {
-      const eventRunId = Number(message.payload.runId)
-      if (runId !== null && eventRunId !== runId) return
-      if (Number.isFinite(eventRunId)) setRunId(eventRunId)
-      setAction(null)
-      setNotice('')
-      setInterruptRetryAllowed(false)
-      const rows = Number(message.payload.mazeRows)
-      const columns = Number(message.payload.mazeColumns)
-
-      if (rows > 0 && columns > 0) {
-        setDimensions({ rows, columns, label: `${columns} × ${rows}` })
-      }
-
-      setRoute([])
-      setTelemetry({})
-      setResult('Em andamento')
-      setStartedAt(Date.now())
-      setElapsed(0)
-      return
-    }
-
-    if (message.kind === 'telemetry') {
-      const sample = message.payload as Telemetry
-      if (runId === null || Number((message.payload as Record<string, unknown>).runId) !== runId) return
-      const position = sample.position
-
-      setTelemetry(sample)
-
-      if (isPositionInsideMaze(position, dimensions)) {
-        setRoute((currentRoute) => {
-          const previousPosition = currentRoute[currentRoute.length - 1]
-          const positionUnchanged =
-            previousPosition?.row === position.row && previousPosition?.column === position.column
-
-          return positionUnchanged ? currentRoute : [...currentRoute, position]
-        })
-      }
-
-      return
-    }
-
-    if (message.kind === 'finished') {
-      if (runId !== null && Number(message.payload.runId) !== runId) return
-      setAction(null)
-      setResult(
-        message.payload.challengeCompleted === true
-          ? 'Sucesso'
-          : message.payload.challengeCompleted === false
-            ? 'Não concluído'
-            : 'Resultado indisponível',
-      )
-      return
-    }
-
-    if (message.kind === 'interrupted') {
-      if (runId !== null && Number(message.payload.runId) !== runId) return
-      setAction(null)
-      setResult('Interrompido')
-      setNotice('')
-      setInterruptRetryAllowed(false)
-      return
-    }
-
-    if (message.kind === 'status') {
-      const eventRunId = Number(message.payload.runId)
-      if (runId !== null && eventRunId !== runId) return
-      const state = String(message.payload.status ?? '').toUpperCase()
-      if (state === 'START_REQUESTED' || state === 'PENDING') {
-        if (Number.isFinite(eventRunId)) setRunId(eventRunId)
-        setResult('Início solicitado')
-        setNotice(String(message.payload.message ?? 'Aguardando confirmação do robô…'))
-        setInterruptRetryAllowed(false)
-      } else if (state === 'INTERRUPT_REQUESTED') {
-        if (Number.isFinite(eventRunId)) setRunId(eventRunId)
-        setResult('Interrupção solicitada')
-        setInterruptRetryAllowed(message.payload.retryAllowed === true)
-        setNotice(String(message.payload.message ?? 'Aguardando confirmação da interrupção…'))
-      } else if (state === 'FAILED') {
-        setResult('Falhou')
-        setAction(null)
-        setNotice(String(message.payload.message ?? 'A execução falhou.'))
-        setInterruptRetryAllowed(false)
-      }
-      if (state === 'INTERRUPT_REQUESTED' && message.payload.retryAllowed === true) setAction(null)
-    }
-  }, [message, dimensions.columns, dimensions.rows, runId])
-
   async function handleStart() {
     if (action || isExecutionLocked(result)) return
+    const rows = clampMazeDimension(mazeRows)
+    const columns = clampMazeDimension(mazeColumns)
+    const nextDimensions = { rows, columns, label: `${columns} × ${rows}` }
+    dimensionsRef.current = nextDimensions
+    runIdRef.current = null
+    setRunId(null)
+    setRoute([])
+    setTelemetry({})
+    setStartedAt(null)
+    setElapsed(0)
+    setMazeRows(rows)
+    setMazeColumns(columns)
+    setDimensions(nextDimensions)
     setAction('starting')
     setResult('Início solicitado')
     setNotice('Solicitando início…')
     setInterruptRetryAllowed(false)
     try {
-      const run = await startRun(maze)
+      const run = await startRun({ mazeRows: rows, mazeColumns: columns, startPosition })
+      runIdRef.current = run.id
       setRunId(run.id)
     } catch (error) {
       setResult('Falhou')
@@ -292,13 +382,18 @@ function App() {
   }
 
   async function handleInterrupt() {
-    if (action || !runId || (result !== 'Em andamento' && !(result === 'Interrupção solicitada' && interruptRetryAllowed))) return
+    if (action || !runId || (result !== 'Em andamento' && result !== 'Interrupção solicitada')) return
     setAction('interrupting')
     setResult('Interrupção solicitada')
     setNotice('Solicitando interrupção…')
     setInterruptRetryAllowed(false)
     try {
-      await interruptRun(runId)
+      const updated = await interruptRun(runId)
+      if (updated.status === 'INTERRUPTED') {
+        setResult('Interrompido')
+        setNotice('')
+        setAction(null)
+      }
     } catch (error) {
       setNotice(`${error instanceof Error ? error.message : 'Não foi possível interromper.'} Tente novamente.`)
       setAction(null)
@@ -307,16 +402,37 @@ function App() {
     }
   }
 
-  function handleMazeChange(nextMaze: MazeSize) {
-    setMaze(nextMaze)
-    setDimensions(mazeOptions[nextMaze])
+  function handleRowsChange(nextRows: number) {
+    const rows = clampMazeDimension(nextRows)
+    setMazeRows(rows)
+    setDimensions({ rows, columns: mazeColumns, label: `${mazeColumns} × ${rows}` })
+    setRoute([])
+  }
+
+  function handleColumnsChange(nextColumns: number) {
+    const columns = clampMazeDimension(nextColumns)
+    setMazeColumns(columns)
+    setDimensions({ rows: mazeRows, columns, label: `${columns} × ${mazeRows}` })
+    setRoute([])
+  }
+
+  function handleStartPositionChange(nextStartPosition: StartPosition) {
+    setStartPosition(nextStartPosition)
     setRoute([])
   }
 
   function prepareMap() {
-    setDimensions(mazeOptions[maze])
+    const rows = clampMazeDimension(mazeRows)
+    const columns = clampMazeDimension(mazeColumns)
+    setMazeRows(rows)
+    setMazeColumns(columns)
+    setDimensions({ rows, columns, label: `${columns} × ${rows}` })
     setRoute([])
   }
+
+  const robotMoving = result === 'Em andamento' || result === 'Interrupção solicitada'
+  const goalCell = getGoalCell(dimensions.rows, dimensions.columns, startPosition)
+  const goalReached = result === 'Sucesso' || route.some((cell) => cell.row === goalCell.row && cell.column === goalCell.column)
 
   return (
     <main className="min-h-screen bg-page text-text">
@@ -334,13 +450,18 @@ function App() {
         </section>
 
         <ExecutionControls
-          maze={maze}
+          mazeRows={mazeRows}
+          mazeColumns={mazeColumns}
+          startPosition={startPosition}
           result={result}
-          onMazeChange={handleMazeChange}
+          robotMoving={robotMoving}
+          onRowsChange={handleRowsChange}
+          onColumnsChange={handleColumnsChange}
+          onStartPositionChange={handleStartPositionChange}
           onPrepare={prepareMap}
           busy={action !== null}
           executionLocked={isExecutionLocked(result)}
-          canInterrupt={(result === 'Em andamento' || (result === 'Interrupção solicitada' && interruptRetryAllowed)) && runId !== null}
+          canInterrupt={(result === 'Em andamento' || result === 'Interrupção solicitada' || interruptRetryAllowed) && runId !== null}
           onStart={handleStart}
           onInterrupt={handleInterrupt}
           notice={notice}
@@ -356,13 +477,23 @@ function App() {
           </div>
         )}
 
-        <div className="mt-4 grid grid-cols-[minmax(0,1fr)_260px] items-start gap-4 max-[960px]:grid-cols-[minmax(0,1fr)_235px] max-[960px]:gap-3 max-[700px]:grid-cols-1">
+        <div className="mt-4 grid grid-cols-[minmax(0,1fr)_280px] items-start gap-4 max-[960px]:grid-cols-[minmax(0,1fr)_250px] max-[960px]:gap-3 max-[700px]:grid-cols-1">
           <MazePanel
             dimensions={dimensions}
+            startPosition={startPosition}
             route={route}
             distanceTravelledMeters={telemetry.distanceTravelledMeters}
           />
-          <ExecutionMetrics telemetry={telemetry} clock={clock} result={result} />
+          <ExecutionMetrics
+            telemetry={telemetry}
+            clock={clock}
+            elapsedSeconds={elapsed}
+            result={result}
+            dimensions={dimensions}
+            startPosition={startPosition}
+            robotMoving={robotMoving}
+            goalReached={goalReached}
+          />
         </div>
 
       </div>

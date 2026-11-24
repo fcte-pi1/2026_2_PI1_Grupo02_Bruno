@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.scheduling.annotation.Scheduled;
 import tools.jackson.databind.ObjectMapper;
 import br.edu.pi1.ratocego.model.MazeType;
+import br.edu.pi1.ratocego.model.StartPosition;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,8 @@ import java.time.Instant;
 @Service
 public class RunLifecycleService {
 
+    public static final int MIN_MAZE_DIMENSION = 1;
+    public static final int MAX_MAZE_DIMENSION = 18;
     private static final Logger log = LoggerFactory.getLogger(RunLifecycleService.class);
     private static final Duration MAX_RUN_DURATION = Duration.ofMinutes(10);
     private static final AtomicLong COMMAND_EVENT_IDS = new AtomicLong(System.currentTimeMillis() * 1_000L);
@@ -59,15 +62,27 @@ public class RunLifecycleService {
 
     @Transactional(transactionManager = "transactionManager", propagation = Propagation.REQUIRED, isolation = Isolation.SERIALIZABLE)
     public Run start(MazeType mazeType) {
+        return start(4, columnsFor(mazeType), StartPosition.BOTTOM_LEFT);
+    }
+
+    @Transactional(transactionManager = "transactionManager", propagation = Propagation.REQUIRED, isolation = Isolation.SERIALIZABLE)
+    public Run start(int mazeRows, int mazeColumns, StartPosition startPosition) {
+        validateDimensions(mazeRows, mazeColumns);
         if (!runRepository.findByStatusIn(List.of(RunStatus.START_REQUESTED, RunStatus.IN_PROGRESS,
                 RunStatus.INTERRUPT_REQUESTED)).isEmpty()) throw new IllegalStateException("A run is already active");
+        StartPosition resolvedStartPosition = startPosition != null ? startPosition : StartPosition.BOTTOM_LEFT;
         Instant now = clock.instant();
-        Run run = new Run(); run.setStatus(RunStatus.START_REQUESTED);
-        run.setMazeRows(4);
-        run.setMazeColumns(columnsFor(mazeType));
-        run.setStartRequestedAt(now); runRepository.save(run);
+        Run run = new Run();
+        run.setStatus(RunStatus.START_REQUESTED);
+        run.setMazeRows(mazeRows);
+        run.setMazeColumns(mazeColumns);
+        run.setStartPosition(resolvedStartPosition);
+        run.setStartRequestedAt(now);
+        runRepository.save(run);
         long runId = run.getId();
-        publishAfterCommit(topicPrefix + "commands/run/start", new StartRunCommand(nextEventId(), runId, mazeType, now));
+        MazeType matchedMazeType = mazeTypeFor(mazeRows, mazeColumns);
+        publishAfterCommit(topicPrefix + "commands/run/start", new StartRunCommand(
+                nextEventId(), runId, matchedMazeType, mazeRows, mazeColumns, resolvedStartPosition, now));
         notifyStatus(run, "Início solicitado. Aguardando confirmação do robô.");
         return run;
     }
@@ -77,8 +92,26 @@ public class RunLifecycleService {
         Run run = findRun(runId);
         if (run.getStatus() == RunStatus.INTERRUPT_REQUESTED) {
             Instant retryAt = clock.instant();
-            run.setInterruptRequestedAt(retryAt); run.setInterruptTimeoutWarned(false); runRepository.save(run);
             publishAfterCommit(topicPrefix + "commands/run/interrupt", new InterruptRunCommand(nextEventId(), runId, retryAt));
+            if (run.isInterruptTimeoutWarned()
+                    || (run.getInterruptRequestedAt() != null && !run.getInterruptRequestedAt().plusSeconds(2).isAfter(retryAt))) {
+                Instant finishedAt = (run.getLastSampleAt() != null && run.getLastSampleAt().isAfter(retryAt))
+                        ? run.getLastSampleAt()
+                        : retryAt;
+                run.setStatus(run.getStatus().transitionTo(RunStatus.INTERRUPTED));
+                run.setFinishedAt(finishedAt);
+                run.setChallengeCompleted(false);
+                runRepository.save(run);
+                eventPublisher.publishEvent(new WebSocketUpdateEvent(RunInterruptedUpdate.builder()
+                        .runId(runId)
+                        .timestamp(finishedAt)
+                        .status(RunStatus.INTERRUPTED)
+                        .build()));
+                return run;
+            }
+            run.setInterruptRequestedAt(retryAt);
+            run.setInterruptTimeoutWarned(false);
+            runRepository.save(run);
             return run;
         }
         if (run.getStatus() != RunStatus.IN_PROGRESS) throw new IllegalStateException("Run is not interruptible");
@@ -135,6 +168,26 @@ public class RunLifecycleService {
         };
     }
 
+    private static MazeType mazeTypeFor(int mazeRows, int mazeColumns) {
+        if (mazeRows != 4) {
+            return null;
+        }
+        return switch (mazeColumns) {
+            case 4 -> MazeType.GRID_4X4;
+            case 8 -> MazeType.GRID_8X4;
+            case 12 -> MazeType.GRID_12X4;
+            default -> null;
+        };
+    }
+
+    private static void validateDimensions(int mazeRows, int mazeColumns) {
+        if (mazeRows < MIN_MAZE_DIMENSION || mazeRows > MAX_MAZE_DIMENSION
+                || mazeColumns < MIN_MAZE_DIMENSION || mazeColumns > MAX_MAZE_DIMENSION) {
+            throw new IllegalArgumentException(
+                    "Maze dimensions must be between " + MIN_MAZE_DIMENSION + " and " + MAX_MAZE_DIMENSION);
+        }
+    }
+
     private long nextEventId() { return COMMAND_EVENT_IDS.incrementAndGet(); }
 
     private void publishAfterCommit(String topic, Object command) {
@@ -172,6 +225,17 @@ public class RunLifecycleService {
             notifyStatus(run, "O robô confirmou dimensões de labirinto diferentes das solicitadas.");
             return;
         }
+        if (event.startPosition() != null && run.getStartPosition() != null
+                && event.startPosition() != run.getStartPosition()) {
+            run.setStatus(RunStatus.FAILED);
+            run.setFinishedAt(clock.instant());
+            runRepository.save(run);
+            notifyStatus(run, "O robô confirmou uma posição inicial diferente da solicitada.");
+            return;
+        }
+        if (run.getStartPosition() == null && event.startPosition() != null) {
+            run.setStartPosition(event.startPosition());
+        }
         if (run.getStatus() == RunStatus.IN_PROGRESS) {
             if (event.timestamp().equals(run.getStartedAt())) {
                 log.warn("Ignoring duplicate run.started for runId={}", event.runId());
@@ -187,6 +251,7 @@ public class RunLifecycleService {
                 .timestamp(event.timestamp())
                 .mazeRows(event.mazeRows())
                 .mazeColumns(event.mazeColumns())
+                .startPosition(run.getStartPosition())
                 .status(RunStatus.IN_PROGRESS)
                 .build()));
     }

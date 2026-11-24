@@ -87,6 +87,7 @@ class RunMapperTest {
         sample.setCurrentSpeedMetersPerSecond(new BigDecimal("0.4"));
         sample.setBatteryVoltageVolts(new BigDecimal("7.3"));
         sample.setCurrentMilliAmps(new BigDecimal("250"));
+        sample.setCurrentPowerWatts(new BigDecimal("1.825"));
 
         var response = mapper.toTelemetrySampleResponse(sample);
 
@@ -99,5 +100,6 @@ class RunMapperTest {
         assertEquals(new BigDecimal("0.4"), response.currentSpeedMetersPerSecond());
         assertEquals(new BigDecimal("7.3"), response.batteryVoltageVolts());
         assertEquals(new BigDecimal("250"), response.currentMilliAmps());
+        assertEquals(new BigDecimal("1.825"), response.currentPowerWatts());
     }
 }

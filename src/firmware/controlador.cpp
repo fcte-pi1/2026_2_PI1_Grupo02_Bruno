@@ -1,4 +1,5 @@
 #include "controlador.h"
+#include "odometria.h"
 
 int32_t distancia_mm = 0;
 int32_t distancia_deg = 0;
@@ -72,7 +73,7 @@ void controladorPID(void) {
   // ==================== MOVIMENTO EM LINHA RETA (FRENTE OU RÉ DE DESATOLAMENTO) ====================
   if (tipo_movimento == TRANSLACIONAL) {
     if (sentido_movimento > 0) {
-      bool usarSensores = modoAteEvento || (setpoint_dist > 80);
+      bool usarSensores = modoAteEvento || modoSaidaCurva || (setpoint_dist > 70);
       int16_t erro_bruto_sensor = usarSensores ? getErroSensores() : 0;
 
       int correcao_sensor = 0;
@@ -224,6 +225,7 @@ void RE(int32_t mm) {
   tipo_movimento = PARADO;
   ignorarParedeFrente = false;
   pararMotores();
+  odometriaRegistrarRecuo(distancia_mm);
   delay(120);
 }
 
@@ -232,6 +234,7 @@ void FRENTE(int32_t mm, bool saidaCurva) {
 
   houveTravamento = false;
   resetControlador();
+  odometriaIniciarMovimentoFrente();
   modoAteEvento = false;
   modoSaidaCurva = saidaCurva;
   giroDuasRodas = false;
@@ -244,20 +247,24 @@ void FRENTE(int32_t mm, bool saidaCurva) {
   int32_t ultimaDistancia = distancia_mm;
 
   while (!isFinalMovimento()) {
+    odometriaAtualizarAvanco(distancia_mm);
     if (abs(distancia_mm - ultimaDistancia) >= 2) {
       ultimaDistancia = distancia_mm;
       tempoUltimoMovimento = millis();
     } else if (millis() - tempoUltimoMovimento >= TEMPO_TRAVAMENTO_MS) {
       modoSaidaCurva = false;
+      odometriaRegistrarParadaMovimento();
       tratarTravamento();
       return;
     }
     delay(2);
   }
 
+  odometriaAtualizarAvanco(distancia_mm);
   tipo_movimento = PARADO;
   modoSaidaCurva = false;
   pararMotores();
+  odometriaConcluirTrechoReto();
   delay(150);
 }
 
@@ -266,6 +273,7 @@ void FRENTE_ATE_EVENTO(void) {
 
   houveTravamento = false;
   resetControlador();
+  odometriaIniciarMovimentoFrente();
   modoAteEvento = true;
   modoSaidaCurva = false;
   giroDuasRodas = false;
@@ -277,16 +285,19 @@ void FRENTE_ATE_EVENTO(void) {
   int32_t ultimaDistancia = distancia_mm;
 
   while (!isFinalMovimento()) {
+    odometriaAtualizarAvanco(distancia_mm);
     if (abs(distancia_mm - ultimaDistancia) >= 2) {
       ultimaDistancia = distancia_mm;
       tempoUltimoMovimento = millis();
     } else if (millis() - tempoUltimoMovimento >= TEMPO_TRAVAMENTO_MS) {
+      odometriaRegistrarParadaMovimento();
       tratarTravamento();
       return;
     }
     delay(2);
   }
 
+  odometriaAtualizarAvanco(distancia_mm);
   tipo_movimento = PARADO;
   pararMotores();
 
@@ -296,6 +307,7 @@ void FRENTE_ATE_EVENTO(void) {
   if (semParedeDireita && !temParedeFrente && bRodarControle) {
     FRENTE(AVANCO_POS_BORDA, false);
   } else {
+    odometriaConcluirTrechoReto();
     delay(150);
   }
 }
@@ -395,19 +407,24 @@ void curvaPivot(int16_t graus) {
 
   tipo_movimento = PARADO;
   pararMotores();
+  if (!houveTravamento && bRodarControle) {
+    odometriaAplicarGiro(graus);
+  }
   delay(200);
 }
+
+#define AVANCO_SAIDA_CURVA_ENC_MM 76 // 1 célula física real (~16,5 cm) em HalfQuad
 
 void curva(int16_t graus, bool alinharAtras) {
   curvaPivot(graus);
   if (houveTravamento || !bRodarControle) return;
 
-  int32_t recuo = 0;
   if (alinharAtras && bRodarControle) {
-    recuo = alinharNaParedeTraseira();
+    int32_t recuo = alinharNaParedeTraseira();
+    odometriaDefinirCompensacaoRecuo(recuo);
   }
 
-  FRENTE(CELULA + recuo, true);
+  FRENTE(AVANCO_SAIDA_CURVA_ENC_MM, true);
 }
 
 void giro180(void) {
@@ -480,6 +497,9 @@ void giro180(void) {
   tipo_movimento = PARADO;
   giroDuasRodas = false;
   pararMotores();
+  if (!houveTravamento && bRodarControle) {
+    odometriaAplicarGiro(180);
+  }
   delay(100);
 
   // 3. No beco sem saída há parede atrás e nos dois lados: alinha com curso maior antes de sair

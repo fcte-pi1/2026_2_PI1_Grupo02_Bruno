@@ -3,5 +3,6 @@
   "runId": 1,
   "timestamp": "2026-10-09T14:00:00Z",
   "mazeRows": 4,
-  "mazeColumns": 4
+  "mazeColumns": 4,
+  "startPosition": "bottom_left"
 }

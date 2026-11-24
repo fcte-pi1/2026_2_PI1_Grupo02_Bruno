@@ -1,5 +1,5 @@
 import { Client, ReconnectionTimeMode } from '@stomp/stompjs'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const DESTINATIONS = [
   ['/topic/run-started', 'started'],
@@ -28,10 +28,11 @@ function isValidTelemetry(payload: Record<string, unknown>) {
     validNumber(payload.batteryVoltageVolts) && validNumber(payload.currentMilliAmps)
 }
 
-export function useTelemetryRealtime() {
+export function useTelemetryRealtime(onMessage?: (message: RealtimeMessage) => void) {
   const [connected, setConnected] = useState(false)
   const [lastMessageAt, setLastMessageAt] = useState<number | null>(null)
-  const [message, setMessage] = useState<RealtimeMessage | null>(null)
+  const onMessageRef = useRef(onMessage)
+  onMessageRef.current = onMessage
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -85,7 +86,7 @@ export function useTelemetryRealtime() {
             const receivedAt = Date.now()
             if (kind === 'telemetry') setLastMessageAt(receivedAt)
             if (kind === 'started') setLastMessageAt(null)
-            setMessage({ kind, payload: payload as Record<string, unknown>, receivedAt })
+            onMessageRef.current?.({ kind, payload: payload as Record<string, unknown>, receivedAt })
           } catch (error) {
             console.error(`[realtime] invalid JSON from ${destination}`, error)
           }
@@ -105,5 +106,5 @@ export function useTelemetryRealtime() {
     }
   }, [])
 
-  return { connected, lastMessageAt, message }
+  return { connected, lastMessageAt }
 }

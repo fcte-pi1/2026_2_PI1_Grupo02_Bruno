@@ -39,6 +39,10 @@ public class Run {
     private boolean interruptTimeoutWarned;
     private Integer mazeRows;
     private Integer mazeColumns;
+
+    @Enumerated(EnumType.STRING)
+    private StartPosition startPosition;
+
     private Boolean challengeCompleted;
     private BigDecimal distanceTravelledMeters;
     private BigDecimal averageSpeedMetersPerSecond;

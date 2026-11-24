@@ -1,4 +1,5 @@
 import { formatElapsedTime, formatNumber } from '../utils/format'
+import type { StartPosition } from '../types/maze'
 
 export type RunStatus = 'START_REQUESTED' | 'IN_PROGRESS' | 'INTERRUPT_REQUESTED' | 'COMPLETED' | 'FAILED' | 'INTERRUPTED'
 
@@ -11,6 +12,7 @@ export type Run = {
   duration: string | null
   mazeRows: number | null
   mazeColumns: number | null
+  startPosition?: StartPosition | null
   challengeCompleted: boolean | null
   distanceTravelledMeters: number | null
   averageSpeedMetersPerSecond: number | null
@@ -30,6 +32,7 @@ export type TelemetrySample = {
   currentSpeedMetersPerSecond: number | null
   batteryVoltageVolts: number | null
   currentMilliAmps: number | null
+  currentPowerWatts?: number | null
 }
 
 export const statusLabels: Record<RunStatus, string> = {
