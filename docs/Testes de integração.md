@@ -1,5 +1,4 @@
 
-https://github.com/user-attachments/assets/0e80e685-bf73-49c9-a106-cb3cf6c5a80b
 
 # Testes de Integração – Hardware
 O presente documento tem como objetivo apresentar e documentar o desenvolvimento e a validação da parte de hardware do robô Micromouse (Rato Cego), desenvolvido no âmbito da disciplina de Projeto Integrador 1 (PI1). Serão abordados os procedimentos de testes realizados durante o processo de desenvolvimento, visando verificar o funcionamento individual dos componentes e, principalmente, a integração entre os diferentes sistemas que compõem o robô.
