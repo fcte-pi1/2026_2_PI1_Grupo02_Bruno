@@ -27,7 +27,7 @@ flowchart LR
         ESP["ESP-WROOM-32<br/>Core 0: Wi-Fi/MQTT/Telemetria<br/>Core 1: Navegação & Odometria"]
         IR["4x Sensores IR FC-51<br/>(GPIO 34, 35, 36, 39)"]
         ENC["2x Encoders HalfQuad<br/>(GPIO 32/33 e 25/26)"]
-        L298["Ponte H L298N + Motores N20<br/>(PWM_E=23 IN1=16 IN2=17<br/>PWM_D=27 IN3=19 IN4=18)"]
+        L298["Ponte H MX1508 + Motores N20<br/>(PWM_E=23 IN1=16 IN2=17<br/>PWM_D=27 IN3=19 IN4=18)"]
     end
 
     subgraph SW["Software (Supervisão & Persistência)"]
@@ -89,7 +89,7 @@ A sub-equipe de Estruturas projetou e fabricou o chassi do robô em impressão 3
 Esta seção preserva integralmente os ensaios de validação de hardware em bancada e no labirinto conduzidos pela sub-equipe de Hardware (com os respectivos vídeos comprobatórios), registrando adicionalmente a evolução da ponte H entre o projeto conceitual e o protótipo físico final.
 
 > [!IMPORTANT]
-> **Evolução do driver de potência na integração final:** Embora o esquemático inicial em [Projeto conceitual de hardware.md](Projeto%20conceitual%20de%20hardware.md) e [Testes de hardware.md](Testes%20de%20hardware.md) previsse a ponte H `MX1508`, a placa física integrada no protótipo final utiliza o driver **`L298N`** (pinagem consolidada em `motores.h`: `PWM_E = 23`, `IN1 = 16`, `IN2 = 17`, `PWM_D = 27`, `IN3 = 19`, `IN4 = 18`) associado ao regulador linear `LM7805` alimentando o pino `VIN` do ESP32.
+> **Evolução do driver de potência na integração final:** Embora o esquemático inicial em [Projeto conceitual de hardware.md](Projeto%20conceitual%20de%20hardware.md) e [Testes de hardware.md](Testes%20de%20hardware.md) previsse a ponte H `L298N`, a placa física integrada no protótipo final utiliza o driver **`MX1508`** (pinagem consolidada em `motores.h`: `PWM_E = 23`, `IN1 = 16`, `IN2 = 17`, `PWM_D = 27`, `IN3 = 19`, `IN4 = 18`) associado ao regulador linear `LM7805` alimentando o pino `VIN` do ESP32.
 
 # Testes de Integração – Hardware
 O presente documento tem como objetivo apresentar e documentar o desenvolvimento e a validação da parte de hardware do robô Micromouse (Rato Cego), desenvolvido no âmbito da disciplina de Projeto Integrador 1 (PI1). Serão abordados os procedimentos de testes realizados durante o processo de desenvolvimento, visando verificar o funcionamento individual dos componentes e, principalmente, a integração entre os diferentes sistemas que compõem o robô.
