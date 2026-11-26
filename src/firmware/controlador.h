@@ -30,8 +30,15 @@
 #define CNT_POR_360DEG   615
 #define CELULA           165 // Tamanho da célula [mm]
 
-// Distância extra [mm] que o robô avança após o sensor direito perder a parede:
-#define AVANCO_POS_BORDA 25
+// Distância extra [mm] que o robô avança após o sensor direito perder a parede vindo de RETA:
+#define AVANCO_POS_BORDA 28
+
+// Detecção de abertura à direita logo após uma CURVA (sem parede na frente):
+#define DIST_MIN_PAREDE_SAIDA         5   // Mínimo vendo parede/divisória na direita para armar a borda
+#define DIST_MIN_BORDA_POS_CURVA      10  // Ignora oscilações bem no início da saída da curva
+#define DIST_SAIR_CURVA_COM_RE        28  // Distância p/ direita aberta (curva COM ré) - era 38
+#define DIST_SAIR_CURVA_SEM_RE        14  // Distância p/ direita aberta (curva SEM ré) - era 22
+#define AVANCO_POS_BORDA_SAIDA_CURVA  15  // Pós-borda exclusivo quando a parede acaba saindo de curva - era 25
 
 // Distância [mm] que o robô avança para a frente antes de dar o giro de 180°:
 #define AVANCO_ANTES_180 30
@@ -88,7 +95,7 @@ void controladorPID(void);
 bool isFinalMovimento(void);
 void resetControlador(void);
 void RE(int32_t mm);
-void FRENTE(int32_t mm, bool saidaCurva = false);
+void FRENTE(int32_t mm, bool saidaCurva = false, int32_t distSairCelula = 0);
 void FRENTE_ATE_EVENTO(void);
 int32_t alinharNaParedeTraseira(int32_t maxDistMm = MAX_DIST_ALINHAMENTO_RE,
                                 unsigned long maxTempoMs = TEMPO_MAX_ALINHAMENTO_RE_MS);

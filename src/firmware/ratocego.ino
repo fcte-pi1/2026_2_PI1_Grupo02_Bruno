@@ -6,7 +6,6 @@
 
 volatile bool bRodarControle = false;
 volatile bool bAguardandoLargada = false;
-volatile bool bParadoPeloBotaoBoot = false;
 volatile uint8_t paredes = 0;
 
 Ticker timerControle;
@@ -31,10 +30,8 @@ void checarBotaoBootNoTimer() {
         esperandoSoltar = true;
         if (!bRodarControle) {
           bAguardandoLargada = false;
-          bParadoPeloBotaoBoot = true;
           pararMotores();
         } else {
-          bParadoPeloBotaoBoot = false;
           bAguardandoLargada = true;
         }
       }
@@ -70,46 +67,23 @@ void setup() {
 
   initMotores();
   initEncoders();
-  initComunicacao();
 
   timerControle.attach_ms(TS, callbackTimer1);
 
-  Serial.println("Pronto! Use a interface MQTT ou aperte o botao BOOT para iniciar/pausar.");
+  Serial.println("Pronto! Aperte o botao BOOT para iniciar ou pausar.");
 }
 
 void loop() {
   if (!bRodarControle) {
-    // Notifica o backend APENAS quando o botão BOOT físico parou uma execução ativa
-    if (bParadoPeloBotaoBoot) {
-      bParadoPeloBotaoBoot = false;
-      if (mqttExecucaoAtiva()) {
-        odometriaRegistrarParadaMovimento();
-        if (odometriaObjetivoAlcancado()) {
-          mqttNotificarConclusao(true);
-        } else {
-          mqttNotificarInterrupcaoLocal();
-        }
-      }
-    }
-
     static unsigned long ultimoPrint = 0;
-    if (millis() - ultimoPrint > 600) {
+    if (millis() - ultimoPrint > 400) {
       ultimoPrint = millis();
-      DadosEletricos elec = obterDadosEletricos();
-      Serial.printf("[PAUSADO] Sensores -> F:%d | T:%d | E:%d | D:%d | Paredes(E-F-D): %d%d%d | INA219(%s): %.2fV %.0fmA %.2fW\n",
+      Serial.printf("[PAUSADO] Sensores -> F:%d | T:%d | E:%d | D:%d | Paredes(E-F-D): %d%d%d\n",
                     FRONTAL, TRASEIRO, ESQUERDO, DIREITO,
-                    (paredes >> 2) & 1, (paredes >> 1) & 1, paredes & 1,
-                    elec.disponivel ? "OK" : "OFF",
-                    elec.tensaoVolts, elec.correnteMilliAmps, elec.potenciaWatts);
+                    (paredes >> 2) & 1, (paredes >> 1) & 1, paredes & 1);
     }
     delay(20);
     return;
-  }
-
-  // Novo comando start recebido via MQTT: reseta encoders/controlador imediatamente
-  if (mqttConsumirInicioRemoto()) {
-    resetControlador();
-    odometriaAjustarOrientacaoLargada(paredes);
   }
 
   // Aguarda soltar o botão BOOT e dá tempo de tirar a mão de cima dos sensores
@@ -128,9 +102,6 @@ void loop() {
     }
 
     resetControlador();
-    OdometriaSnapshot snapAtual = odometriaObterSnapshot(false);
-    odometriaConfigurarExecucao(snapAtual.mazeRows, snapAtual.mazeCols, snapAtual.startPos);
-    odometriaAjustarOrientacaoLargada(paredes);
     bAguardandoLargada = false;
     delay(30);
 

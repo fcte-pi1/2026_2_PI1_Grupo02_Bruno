@@ -1,5 +1,4 @@
 #include "controlador.h"
-#include "odometria.h"
 
 int32_t distancia_mm = 0;
 int32_t distancia_deg = 0;
@@ -73,7 +72,7 @@ void controladorPID(void) {
   // ==================== MOVIMENTO EM LINHA RETA (FRENTE OU RÉ DE DESATOLAMENTO) ====================
   if (tipo_movimento == TRANSLACIONAL) {
     if (sentido_movimento > 0) {
-      bool usarSensores = modoAteEvento || modoSaidaCurva || (setpoint_dist > 70);
+      bool usarSensores = modoAteEvento || modoSaidaCurva || (setpoint_dist > 80);
       int16_t erro_bruto_sensor = usarSensores ? getErroSensores() : 0;
 
       int correcao_sensor = 0;
@@ -225,16 +224,14 @@ void RE(int32_t mm) {
   tipo_movimento = PARADO;
   ignorarParedeFrente = false;
   pararMotores();
-  odometriaRegistrarRecuo(distancia_mm);
   delay(120);
 }
 
-void FRENTE(int32_t mm, bool saidaCurva) {
+void FRENTE(int32_t mm, bool saidaCurva, int32_t distSairCelula) {
   if (!bRodarControle || mm == 0) return;
 
   houveTravamento = false;
   resetControlador();
-  odometriaIniciarMovimentoFrente();
   modoAteEvento = false;
   modoSaidaCurva = saidaCurva;
   giroDuasRodas = false;
@@ -246,26 +243,80 @@ void FRENTE(int32_t mm, bool saidaCurva) {
   unsigned long tempoUltimoMovimento = millis();
   int32_t ultimaDistancia = distancia_mm;
 
+  int32_t ultimoDistCheck = 0;
+  int32_t distComParedeDir = 0;
+  bool confirmouParedeDir = false;
+  bool perdeuParedeDir = false;
+
   while (!isFinalMovimento()) {
-    odometriaAtualizarAvanco(distancia_mm);
-    if (abs(distancia_mm - ultimaDistancia) >= 2) {
-      ultimaDistancia = distancia_mm;
+    int32_t distAtual = distancia_mm;
+
+    if (saidaCurva) {
+      bool temParedeDireita = (paredes & 0b001) != 0;
+
+      // Descarta qualquer leitura rápida da quina bem no comecinho da saída da curva
+      if (!temParedeDireita && distAtual < DIST_MIN_BORDA_POS_CURVA) {
+        confirmouParedeDir = false;
+        distComParedeDir = 0;
+      }
+
+      if (distAtual > ultimoDistCheck) {
+        int32_t delta = distAtual - ultimoDistCheck;
+        ultimoDistCheck = distAtual;
+
+        if (temParedeDireita) {
+          distComParedeDir += delta;
+          if (distComParedeDir >= DIST_MIN_PAREDE_SAIDA) {
+            confirmouParedeDir = true;
+          }
+        } else if (!confirmouParedeDir) {
+          distComParedeDir = 0;
+        }
+      }
+
+      // Caso 1: Viu parede/divisória na direita e ela acabou -> avança só o pós-borda de saída de curva
+      if (confirmouParedeDir && !temParedeDireita && distAtual >= DIST_MIN_BORDA_POS_CURVA) {
+        perdeuParedeDir = true;
+        break;
+      }
+
+      // Caso 2: Saiu da célula da curva e a direita continua aberta -> para na hora para curvar
+      if (!confirmouParedeDir && distSairCelula > 0 &&
+          distAtual >= distSairCelula && !temParedeDireita) {
+        Serial.printf(">>> [SAIDA CURVA] Direita aberta em %d (limiar %d) -> parando para curvar\n",
+                      (int)distAtual, (int)distSairCelula);
+        break;
+      }
+    }
+
+    if (abs(distAtual - ultimaDistancia) >= 2) {
+      ultimaDistancia = distAtual;
       tempoUltimoMovimento = millis();
     } else if (millis() - tempoUltimoMovimento >= TEMPO_TRAVAMENTO_MS) {
       modoSaidaCurva = false;
-      odometriaRegistrarParadaMovimento();
       tratarTravamento();
       return;
     }
     delay(2);
   }
 
-  odometriaAtualizarAvanco(distancia_mm);
+  int32_t distFinal = distancia_mm;
   tipo_movimento = PARADO;
   modoSaidaCurva = false;
   pararMotores();
-  odometriaConcluirTrechoReto();
-  delay(150);
+
+  bool temParedeFrente = (paredes & 0b010) != 0;
+  if (perdeuParedeDir && !temParedeFrente && bRodarControle) {
+    Serial.printf(">>> [SAIDA CURVA] Parede direita acabou em %d -> avancando pos-borda (%d)\n",
+                  (int)distFinal, AVANCO_POS_BORDA_SAIDA_CURVA);
+    if (AVANCO_POS_BORDA_SAIDA_CURVA > 0) {
+      FRENTE(AVANCO_POS_BORDA_SAIDA_CURVA, false);
+    } else {
+      delay(150);
+    }
+  } else {
+    delay(150);
+  }
 }
 
 void FRENTE_ATE_EVENTO(void) {
@@ -273,7 +324,6 @@ void FRENTE_ATE_EVENTO(void) {
 
   houveTravamento = false;
   resetControlador();
-  odometriaIniciarMovimentoFrente();
   modoAteEvento = true;
   modoSaidaCurva = false;
   giroDuasRodas = false;
@@ -285,19 +335,16 @@ void FRENTE_ATE_EVENTO(void) {
   int32_t ultimaDistancia = distancia_mm;
 
   while (!isFinalMovimento()) {
-    odometriaAtualizarAvanco(distancia_mm);
     if (abs(distancia_mm - ultimaDistancia) >= 2) {
       ultimaDistancia = distancia_mm;
       tempoUltimoMovimento = millis();
     } else if (millis() - tempoUltimoMovimento >= TEMPO_TRAVAMENTO_MS) {
-      odometriaRegistrarParadaMovimento();
       tratarTravamento();
       return;
     }
     delay(2);
   }
 
-  odometriaAtualizarAvanco(distancia_mm);
   tipo_movimento = PARADO;
   pararMotores();
 
@@ -307,7 +354,6 @@ void FRENTE_ATE_EVENTO(void) {
   if (semParedeDireita && !temParedeFrente && bRodarControle) {
     FRENTE(AVANCO_POS_BORDA, false);
   } else {
-    odometriaConcluirTrechoReto();
     delay(150);
   }
 }
@@ -407,24 +453,20 @@ void curvaPivot(int16_t graus) {
 
   tipo_movimento = PARADO;
   pararMotores();
-  if (!houveTravamento && bRodarControle) {
-    odometriaAplicarGiro(graus);
-  }
   delay(200);
 }
-
-#define AVANCO_SAIDA_CURVA_ENC_MM 76 // 1 célula física real (~16,5 cm) em HalfQuad
 
 void curva(int16_t graus, bool alinharAtras) {
   curvaPivot(graus);
   if (houveTravamento || !bRodarControle) return;
 
+  int32_t recuo = 0;
   if (alinharAtras && bRodarControle) {
-    int32_t recuo = alinharNaParedeTraseira();
-    odometriaDefinirCompensacaoRecuo(recuo);
+    recuo = alinharNaParedeTraseira();
   }
 
-  FRENTE(AVANCO_SAIDA_CURVA_ENC_MM, true);
+  int32_t distSair = alinharAtras ? DIST_SAIR_CURVA_COM_RE : DIST_SAIR_CURVA_SEM_RE;
+  FRENTE(CELULA + recuo, true, distSair);
 }
 
 void giro180(void) {
@@ -497,9 +539,6 @@ void giro180(void) {
   tipo_movimento = PARADO;
   giroDuasRodas = false;
   pararMotores();
-  if (!houveTravamento && bRodarControle) {
-    odometriaAplicarGiro(180);
-  }
   delay(100);
 
   // 3. No beco sem saída há parede atrás e nos dois lados: alinha com curso maior antes de sair
