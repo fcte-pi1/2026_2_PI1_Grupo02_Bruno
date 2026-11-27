@@ -15,7 +15,7 @@
 #define MQTT_BROKER_HOST "192.168.15.155"
 #define MQTT_BROKER_PORT 1883
 #define MQTT_USERNAME "ratocego"
-#define MQTT_PASSWORD "teste123"
+#define MQTT_PASSWORD "ratocego"
 #define MQTT_CLIENT_ID "ratocego-esp32"
 #define MQTT_TOPIC_PREFIX "ratocego"
 

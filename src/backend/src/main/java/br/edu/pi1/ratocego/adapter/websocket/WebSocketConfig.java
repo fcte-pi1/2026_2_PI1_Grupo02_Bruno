@@ -7,24 +7,25 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final TaskScheduler heartbeatScheduler;
+    private final String[] allowedOriginPatterns;
 
-    public WebSocketConfig(@Qualifier("websocketHeartbeatScheduler") TaskScheduler heartbeatScheduler) {
+    public WebSocketConfig(@Qualifier("websocketHeartbeatScheduler") TaskScheduler heartbeatScheduler,
+                           @Value("${app.websocket.allowed-origins}") String[] allowedOriginPatterns) {
         this.heartbeatScheduler = heartbeatScheduler;
+        this.allowedOriginPatterns = allowedOriginPatterns;
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(
-                        "http://localhost:5173",
-                        "http://127.0.0.1:5173"
-                );
+                .setAllowedOriginPatterns(allowedOriginPatterns);
     }
 
     @Override

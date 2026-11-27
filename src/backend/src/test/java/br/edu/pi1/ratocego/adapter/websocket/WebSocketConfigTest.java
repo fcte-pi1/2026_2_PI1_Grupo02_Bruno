@@ -20,7 +20,7 @@ class WebSocketConfigTest {
     @Test
     void registersFrontendEndpointAndSimpleBroker() {
         TaskScheduler scheduler = mock(TaskScheduler.class);
-        WebSocketConfig config = new WebSocketConfig(scheduler);
+        WebSocketConfig config = new WebSocketConfig(scheduler, new String[]{"http://localhost:5173", "http://127.0.0.1:5173"});
         StompEndpointRegistry endpointRegistry = mock(StompEndpointRegistry.class);
         StompWebSocketEndpointRegistration endpoint = mock(StompWebSocketEndpointRegistration.class);
         when(endpointRegistry.addEndpoint("/ws")).thenReturn(endpoint);
