@@ -8,14 +8,14 @@
 // =============================================================================
 
 // Rede Wi-Fi (mesma rede local do PC onde o Docker/Mosquitto está rodando)
-#define WIFI_SSID "iPhone"
-#define WIFI_PASSWORD "01010101"
+#define WIFI_SSID "OLIVEIRA"
+#define WIFI_PASSWORD "edu591730"
 
 // Broker MQTT (IP da máquina com Docker na rede local, ex.: "192.168.1.100")
-#define MQTT_BROKER_HOST "172.18.0.1"
+#define MQTT_BROKER_HOST "192.168.15.155"
 #define MQTT_BROKER_PORT 1883
 #define MQTT_USERNAME "ratocego"
-#define MQTT_PASSWORD "ratocego"
+#define MQTT_PASSWORD "teste123"
 #define MQTT_CLIENT_ID "ratocego-esp32"
 #define MQTT_TOPIC_PREFIX "ratocego"
 

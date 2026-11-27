@@ -1,4 +1,5 @@
 #include "controlador.h"
+#include "odometria.h"
 
 int32_t distancia_mm = 0;
 int32_t distancia_deg = 0;
@@ -224,6 +225,7 @@ void RE(int32_t mm) {
   tipo_movimento = PARADO;
   ignorarParedeFrente = false;
   pararMotores();
+  odometriaRegistrarRecuo(distancia_mm);
   delay(120);
 }
 
@@ -232,6 +234,7 @@ void FRENTE(int32_t mm, bool saidaCurva, int32_t distSairCelula) {
 
   houveTravamento = false;
   resetControlador();
+  odometriaIniciarMovimentoFrente();                       // [VINICIUS] odometria
   modoAteEvento = false;
   modoSaidaCurva = saidaCurva;
   giroDuasRodas = false;
@@ -243,6 +246,7 @@ void FRENTE(int32_t mm, bool saidaCurva, int32_t distSairCelula) {
   unsigned long tempoUltimoMovimento = millis();
   int32_t ultimaDistancia = distancia_mm;
 
+  // [THIAGO] detecção de abertura à direita na saída da curva
   int32_t ultimoDistCheck = 0;
   int32_t distComParedeDir = 0;
   bool confirmouParedeDir = false;
@@ -250,8 +254,9 @@ void FRENTE(int32_t mm, bool saidaCurva, int32_t distSairCelula) {
 
   while (!isFinalMovimento()) {
     int32_t distAtual = distancia_mm;
+    odometriaAtualizarAvanco(distAtual);                   // [VINICIUS] odometria
 
-    if (saidaCurva) {
+    if (saidaCurva) {                                      // [THIAGO]
       bool temParedeDireita = (paredes & 0b001) != 0;
 
       // Descarta qualquer leitura rápida da quina bem no comecinho da saída da curva
@@ -294,6 +299,7 @@ void FRENTE(int32_t mm, bool saidaCurva, int32_t distSairCelula) {
       tempoUltimoMovimento = millis();
     } else if (millis() - tempoUltimoMovimento >= TEMPO_TRAVAMENTO_MS) {
       modoSaidaCurva = false;
+      odometriaRegistrarParadaMovimento();                 // [VINICIUS] odometria
       tratarTravamento();
       return;
     }
@@ -301,20 +307,20 @@ void FRENTE(int32_t mm, bool saidaCurva, int32_t distSairCelula) {
   }
 
   int32_t distFinal = distancia_mm;
+  odometriaAtualizarAvanco(distFinal);                     // [VINICIUS] odometria
   tipo_movimento = PARADO;
   modoSaidaCurva = false;
   pararMotores();
 
+  // [THIAGO] pós-borda na saída de curva
   bool temParedeFrente = (paredes & 0b010) != 0;
-  if (perdeuParedeDir && !temParedeFrente && bRodarControle) {
+  if (perdeuParedeDir && !temParedeFrente && bRodarControle && AVANCO_POS_BORDA_SAIDA_CURVA > 0) {
     Serial.printf(">>> [SAIDA CURVA] Parede direita acabou em %d -> avancando pos-borda (%d)\n",
                   (int)distFinal, AVANCO_POS_BORDA_SAIDA_CURVA);
-    if (AVANCO_POS_BORDA_SAIDA_CURVA > 0) {
-      FRENTE(AVANCO_POS_BORDA_SAIDA_CURVA, false);
-    } else {
-      delay(150);
-    }
+    // A FRENTE() interna consolida a célula ao final (mesmo padrão do FRENTE_ATE_EVENTO)
+    FRENTE(AVANCO_POS_BORDA_SAIDA_CURVA, false);
   } else {
+    odometriaConcluirTrechoReto();                         // [VINICIUS] odometria
     delay(150);
   }
 }
@@ -324,6 +330,7 @@ void FRENTE_ATE_EVENTO(void) {
 
   houveTravamento = false;
   resetControlador();
+  odometriaIniciarMovimentoFrente();
   modoAteEvento = true;
   modoSaidaCurva = false;
   giroDuasRodas = false;
@@ -335,16 +342,19 @@ void FRENTE_ATE_EVENTO(void) {
   int32_t ultimaDistancia = distancia_mm;
 
   while (!isFinalMovimento()) {
+    odometriaAtualizarAvanco(distancia_mm);
     if (abs(distancia_mm - ultimaDistancia) >= 2) {
       ultimaDistancia = distancia_mm;
       tempoUltimoMovimento = millis();
     } else if (millis() - tempoUltimoMovimento >= TEMPO_TRAVAMENTO_MS) {
+      odometriaRegistrarParadaMovimento();
       tratarTravamento();
       return;
     }
     delay(2);
   }
 
+  odometriaAtualizarAvanco(distancia_mm);
   tipo_movimento = PARADO;
   pararMotores();
 
@@ -354,6 +364,7 @@ void FRENTE_ATE_EVENTO(void) {
   if (semParedeDireita && !temParedeFrente && bRodarControle) {
     FRENTE(AVANCO_POS_BORDA, false);
   } else {
+    odometriaConcluirTrechoReto();
     delay(150);
   }
 }
@@ -453,6 +464,9 @@ void curvaPivot(int16_t graus) {
 
   tipo_movimento = PARADO;
   pararMotores();
+  if (!houveTravamento && bRodarControle) {
+    odometriaAplicarGiro(graus);
+  }
   delay(200);
 }
 
@@ -463,8 +477,10 @@ void curva(int16_t graus, bool alinharAtras) {
   int32_t recuo = 0;
   if (alinharAtras && bRodarControle) {
     recuo = alinharNaParedeTraseira();
+    odometriaDefinirCompensacaoRecuo(recuo);               // [VINICIUS] odometria
   }
 
+  // [THIAGO] avança até 1 célula + recuo, mas para antes se detectar abertura à direita
   int32_t distSair = alinharAtras ? DIST_SAIR_CURVA_COM_RE : DIST_SAIR_CURVA_SEM_RE;
   FRENTE(CELULA + recuo, true, distSair);
 }
@@ -539,6 +555,9 @@ void giro180(void) {
   tipo_movimento = PARADO;
   giroDuasRodas = false;
   pararMotores();
+  if (!houveTravamento && bRodarControle) {
+    odometriaAplicarGiro(180);
+  }
   delay(100);
 
   // 3. No beco sem saída há parede atrás e nos dois lados: alinha com curso maior antes de sair
