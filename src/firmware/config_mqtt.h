@@ -8,8 +8,8 @@
 // =============================================================================
 
 // Rede Wi-Fi (mesma rede local do PC onde o Docker/Mosquitto está rodando)
-#define WIFI_SSID "OLIVEIRA"
-#define WIFI_PASSWORD "edu591730"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
 // Broker MQTT (IP da máquina com Docker na rede local, ex.: "192.168.1.100")
 #define MQTT_BROKER_HOST "192.168.15.155"
